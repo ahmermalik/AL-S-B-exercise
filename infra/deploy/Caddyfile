@@ -1,4 +1,4 @@
-asset-living-close.167.172.151.243.sslip.io {
+asset-living-demo.foresyte.xyz {
     encode zstd gzip
 
     header {
@@ -10,5 +10,9 @@ asset-living-close.167.172.151.243.sslip.io {
     }
 
     reverse_proxy asset-living-close-web:3000
+}
+
+asset-living-close.167.172.151.243.sslip.io {
+    redir https://asset-living-demo.foresyte.xyz{uri} permanent
 }
 

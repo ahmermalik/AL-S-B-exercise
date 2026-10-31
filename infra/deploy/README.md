@@ -7,7 +7,9 @@ container over the external `foresyte_default` Docker network.
 
 ## Runtime layout
 
-- Public URL: `https://asset-living-close.167.172.151.243.sslip.io`
+- Public URL: `https://asset-living-demo.foresyte.xyz`
+- Legacy URL: `https://asset-living-close.167.172.151.243.sslip.io` redirects
+  permanently to the public URL.
 - Server directory: `/home/deploy/asset-living-close`
 - Persistent state: `/home/deploy/asset-living-close/data`
 - Web memory limit: 320 MiB
@@ -38,7 +40,7 @@ droplet SSH host key is pinned in the workflow.
 ## Verification
 
 ```sh
-curl -fsS https://asset-living-close.167.172.151.243.sslip.io/login
+curl -fsS https://asset-living-demo.foresyte.xyz/login
 ssh foresyte-prod 'docker inspect asset-living-close-web --format "{{.State.Health.Status}}"'
 ssh foresyte-prod 'docker inspect asset-living-close-worker --format "{{.State.Status}}"'
 ```

@@ -13,7 +13,7 @@ env:
   DROPLET_HOST: 167.172.151.243
   DROPLET_USER: deploy
   DROPLET_HOST_KEY: 167.172.151.243 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICSHkIfZSfNgSgK5fRHvFo8jhln33uWYMW7Bg2MYYLns
-  PUBLIC_URL: https://asset-living-close.167.172.151.243.sslip.io
+  PUBLIC_URL: https://asset-living-demo.foresyte.xyz
 
 jobs:
   build:

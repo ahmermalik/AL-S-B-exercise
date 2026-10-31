@@ -7,7 +7,8 @@ Planning began on October 29, 2026. The local application and required local che
 Production deployment configuration for the shared DigitalOcean droplet lives
 in [`infra/deploy`](infra/deploy/README.md). Images are built in GitHub Actions,
 runtime state stays on a persistent host directory, and the web/worker
-containers have explicit memory limits.
+containers have explicit memory limits. The deployed application is available
+at **https://asset-living-demo.foresyte.xyz**.
 
 ## Start locally
 
