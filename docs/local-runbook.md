@@ -1,6 +1,6 @@
 # Local application
 
-Implemented October 31, 2026. The four screens are connected to authenticated server endpoints, SQLite, a separate preparation worker, versioned cases and frozen report packages. No Azure resources have been provisioned.
+Implemented October 31, 2026. The four screens are connected to authenticated server endpoints, SQLite, a separate preparation worker, versioned cases and frozen report packages. The local workflow documented here is also packaged for the shared DigitalOcean deployment described in the [production runbook](../infra/deploy/README.md); Azure is not part of the application runtime.
 
 ## Start
 
@@ -25,7 +25,7 @@ Keep the terminal open; **Ctrl+C** stops both the web server and worker. If port
 
 These are two roles within the same application and shared four-screen workflow. Staff records support and execution evidence; the manager reviews proposals, approves or returns them, confirms resolution and creates the reviewed package. The agent prepares findings without its own login. Use a normal browser window for the manager and a private window for the accountant to follow the handoff.
 
-For this initial local installation, both accounts use `CloseReview!2026`. This is a local walkthrough credential, not a deployment secret. New installations use `LOCAL_SEED_PASSWORD`; startup does not silently reset existing passwords.
+Both local review accounts and the public reviewer deployment use `CloseReview!2026`. It is an intentionally published demonstration credential, not a private production secret. Do not use the shared deployment for confidential data. New installations use `LOCAL_SEED_PASSWORD`; startup does not silently reset existing passwords.
 
 The database is `data/asset-living.sqlite`; the workbook copy is `data/source/close-pack.xlsx`. Both are gitignored, as is `.env.local`. Original files in Downloads are unchanged. Imported source archives are hashed and retained under the data directory.
 
@@ -85,7 +85,7 @@ The first qualitative review caught fixture invoice `INV-GND-01` disagreeing wit
 
 ## Local containers
 
-`Dockerfile` and `compose.yaml` package the web application and worker for local Linux verification. Node.js 24.22.2 / SQLite 3.53.4, authenticated login/source counts, worker preparation and persistence after web restart were verified. The isolated check retained one import and 67 cases, with 51 rule-only preparations complete and model drafting partial at that time. The current full worker run later completed all 67 cases with no error, including 16 live semantic drafts; the earlier Linux image built successfully; the final Linux image rebuild passed. Only those verification containers and test volume were removed. This is not an Azure deployment. The local Compose binding is `127.0.0.1:3000`, so stop the native server before using it:
+`Dockerfile` and `compose.yaml` package the web application and worker for local Linux verification. Node.js 24.22.2 / SQLite 3.53.4, authenticated login/source counts, worker preparation and persistence after web restart were verified. The isolated check retained one import and 67 cases, with 51 rule-only preparations complete and model drafting partial at that time. The current full worker run later completed all 67 cases with no error, including 16 live semantic drafts; the earlier Linux image built successfully; the final Linux image rebuild passed. The local Compose binding is `127.0.0.1:3000`, so stop the native server before using it:
 
 ```sh
 docker compose up --build -d
@@ -93,4 +93,4 @@ docker compose logs -f web worker
 docker compose stop
 ```
 
-The runtime uses a Docker volume for the entire SQLite directory, including WAL/shared-memory files; source workbook input is mounted read-only. Credentials are supplied through the ignored environment file, not built into the image. Do not remove the volume to restart or update the application. Azure Caddy/Bicep provisioning, off-host backup, restore/reboot rehearsal and public access remain a separate deployment step.
+The local runtime uses a Docker volume for the entire SQLite directory, including WAL/shared-memory files; source workbook input is mounted read-only. Credentials are supplied through the ignored environment file, not built into the image. Do not remove the volume to restart or update the application. Production uses a host bind mount, shared Caddy, and CI-built GHCR image as documented in the [production runbook](../infra/deploy/README.md). Off-host backup and restore rehearsal remain operational follow-up work.

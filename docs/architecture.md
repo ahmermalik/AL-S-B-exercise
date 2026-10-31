@@ -1,6 +1,6 @@
 # Application architecture
 
-Implementation status, October 31, 2026. Read with the [implementation plan](implementation-plan.md), [local runbook](local-runbook.md) and [UI guidelines](ui-guidelines.md). All four screens, authenticated server endpoints, durable SQLite workflow and frozen report packages are implemented locally. Dependencies are installed and locked. Azure remains a selected future delivery topology; it is not deployed or authorized in the current local implementation scope.
+Implementation status, October 31, 2026. Read with the [implementation plan](implementation-plan.md), [local runbook](local-runbook.md), [production runbook](../infra/deploy/README.md), and [UI guidelines](ui-guidelines.md). All four screens, authenticated server endpoints, durable SQLite workflow and frozen report packages are implemented. The public reviewer deployment runs on the existing DigitalOcean droplet at `asset-living-demo.foresyte.xyz`; Azure is not part of the application runtime.
 
 Local verification passed TypeScript, ESLint, 42 unit tests, the full browser workflow and the native Next.js production build. All four desktop/phone screens and targeted dark-theme, 125% zoom, reduced-motion and keyboard/focus states were checked; partial progress, phone package actions and dialog focus were corrected and rechecked. The Linux image confirmed Node.js 24.22.2 and SQLite 3.53.4. Authenticated container login/source counts, worker preparation and persistence after web restart also passed: one import and 67 cases survived, with 51 rule-only preparations complete in that earlier isolated check. The current full run subsequently completed all 67 cases, including 16 live semantic drafts, with no run error. The earlier Linux image built successfully; the final Linux image rebuild passed. Account/model access, a live Case review tool loop and a live four-case package summary now passed.
 
@@ -19,9 +19,9 @@ Local verification passed TypeScript, ESLint, 42 unit tests, the full browser wo
 | LLM integration | Official OpenAI JavaScript SDK and Responses API; configured `gpt-6.1-sol`. Catalog capabilities, account access and selected live application features verified; full worker preparation verified at 67/67. Azure AI Gateway remains a future capability-checked profile, not a tested active provider |
 | Reports | Compact print-ready HTML, browser Print/Save as PDF, case CSV; full audit/source details outside the default report |
 | Verification | Vitest, Playwright, TypeScript and ESLint |
-| Delivery | Local Next.js/worker plus a Linux Docker image and local Compose configuration. Planned Azure delivery: Ubuntu 24.04 VM, Caddy HTTPS, attached persistent managed disk and Bicep |
+| Delivery | CI-built Linux image; Next.js web/API and one worker on the shared DigitalOcean droplet behind Caddy, with a persistent host bind mount |
 
-Exact installed dependencies are recorded in `package.json` and `pnpm-lock.yaml`: Next.js 16.4.3, React 19.3.1, Better Auth and its Drizzle adapter 1.7.14, better-sqlite3 13.0.3, Drizzle ORM 0.45.4 and OpenAI SDK 7.47.0. Node 24 is the supported baseline; the checked Linux runtime is 24.22.2. The foundation uses stable Drizzle, not its 1.0 prerelease path. Release image digests and Azure-specific configuration remain deployment work.
+Exact installed dependencies are recorded in `package.json` and `pnpm-lock.yaml`: Next.js 16.4.3, React 19.3.1, Better Auth and its Drizzle adapter 1.7.14, better-sqlite3 13.0.3, Drizzle ORM 0.45.4 and OpenAI SDK 7.47.0. Node 24 is the supported baseline; the checked Linux runtime is 24.22.2. The foundation uses stable Drizzle, not its 1.0 prerelease path. GitHub Actions builds the `linux/amd64` release image and deploys its commit tag through SSH.
 
 ## Composition and ownership
 
@@ -46,7 +46,7 @@ flowchart LR
     D --> P[Versioned cases and internal packages]
 ```
 
-The diagram shows the selected Azure delivery boundary. The working local application runs on loopback port 3000 without the future public HTTPS deployment. Local startup and container commands are in the runbook.
+The diagram shows both the local and deployed process boundary. Development binds loopback port 3000; production exposes only shared Caddy, which reaches the web container over an external Docker network. Local startup and container commands are in the runbook.
 
 ## Persistence and source integrity
 
@@ -59,7 +59,7 @@ Reviewed packages preserve materialized scope, register, included wording, unres
 ## SQLite placement and concurrency
 
 - Development: a configurable, gitignored path such as `data/asset-living.sqlite` inside the checkout.
-- Azure: a directory such as `/srv/asset-living/data` on an attached managed disk, outside the checkout and container image. Web and worker mount the same whole local directory, including WAL/shared-memory files and immutable uploads.
+- Production: `/home/deploy/asset-living-close/data` on the droplet, outside the checkout and container image. Web and worker bind-mount the same whole local directory, including WAL/shared-memory files and immutable uploads.
 - Use WAL, a busy timeout and short transactions. Keep database connections on the same host; a network share is unsuitable for this WAL topology.
 - Never hold a database transaction open while waiting for a model. Validate job ownership and expected evidence/case versions immediately before committing a result.
 - Run schema migrations once during controlled deployment. Keep source-controlled migrations and synthetic seed definitions separate from mutable runtime data.
@@ -100,15 +100,13 @@ The normal report has a short property/period/version header, an optional concis
 
 Source links open evidence where needed. Store full provenance and expose it through Audit details or a separate audit download, rather than placing a source manifest in the primary preview. Print-ready HTML and CSV render the frozen package; browser Print/Save as PDF avoids a server-side browser/PDF service. These are internal accounting handoffs, not complete owner financial statements.
 
-## Azure delivery
+## Production delivery
 
-Azure delivery remains planned, not deployed or authorized in this local build turn. The selected target is one Ubuntu 24.04 LTS VM running Caddy, web and one worker through Docker Compose, with HTTPS, a private application port, restart policies, health checks and structured logs. An attached managed data disk will hold SQLite and immutable files. Bicep remains part of that future infrastructure work.
+GitHub Actions builds the `linux/amd64` image and publishes commit and `latest` tags to GHCR. The deploy job copies the production Compose file over pinned-key SSH, pulls the immutable commit tag, recreates web/worker, waits for health, and verifies the public application plus existing droplet services.
 
-The existing local Dockerfile/Compose configuration is for Linux verification. Its runtime/native-driver probe, authenticated login/source counts, worker preparation and web-restart persistence checks passed. These checks used isolated verification containers and a test volume, which were then removed. It does not establish that Azure Caddy, disk persistence, off-host backup or reboot/restore rehearsal has been completed.
+The web container is limited to 320 MiB and the worker to 384 MiB. Neither binds a host port. Shared Caddy terminates HTTPS for `asset-living-demo.foresyte.xyz` and proxies to the web container over `foresyte_default`. SQLite, WAL/shared-memory files, uploaded workbooks, archives, and manual backups remain under the persistent host data directory.
 
-Start capacity planning around 2 vCPU/8 GB, then confirm an available SKU, region and cost before provisioning. Subscription/resource group, hostname/TLS setup, hosting duration and deployment credentials remain environment inputs. A single VM requires maintenance and provides no application high availability; the selected simplicity does not imply otherwise.
-
-Create a consistent SQLite backup, retain its referenced immutable files and copy completed backups off-host to Blob Storage. Do not copy only an active database file while ignoring its WAL. Rehearse restore, VM reboot and application redeployment without losing source, case or package history. Existing PostgreSQL remains a future alternative if hosting/concurrency requirements change, not a second backend to build now.
+This is a deliberately inexpensive single-host reviewer deployment, not a high-availability architecture. Consistent scheduled off-host backup and restore/reboot rehearsal remain operational follow-up work. Existing PostgreSQL remains a future alternative if hosting or concurrency requirements change, not a second backend to build now.
 
 ## Primary sources checked October 31, 2026
 
@@ -121,6 +119,4 @@ Create a consistent SQLite backup, retain its referenced immutable files and cop
 - [Better Auth Next.js integration](https://better-auth.com/docs/integrations/next), [Drizzle adapter](https://better-auth.com/docs/adapters/drizzle), [email/password](https://better-auth.com/docs/authentication/email-password) and [stable releases](https://github.com/better-auth/better-auth/releases): sessions, SQLite adapter, signup configuration and compatible stable-package selection.
 - [Configured model catalog](https://developers.openai.com/api/docs/models/gpt-6.1-sol): documented Responses, function-calling and structured-output capabilities. Account access and selected live application responses were separately verified.
 - [OpenAI function calling](https://developers.openai.com/api/docs/guides/function-calling#the-tool-calling-flow) and [structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs): application-controlled tools and schema-constrained output.
-- [Azure managed data disks](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-format-mount-data-disks-linux) and [Bicep VM quickstart](https://learn.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-bicep): persistent VM storage and infrastructure definition. Confirm the actual Ubuntu image/SKU rather than copying older quickstart defaults.
-
-These sources establish product capabilities and constraints. Completed local checks and separately scoped future Azure delivery work are recorded above and in the implementation plan; source documentation alone is not evidence of application verification.
+These sources establish product capabilities and constraints. Completed local and production checks are recorded above and in the implementation plan; source documentation alone is not evidence of application verification.

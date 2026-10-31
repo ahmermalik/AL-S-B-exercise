@@ -1,6 +1,6 @@
 # Implementation plan and status
 
-Updated October 31, 2026. The original pre-build plan below is retained as the implementation contract. Under D022, the connected local application is now implemented: all four screens, authenticated manager/accountant roles, SQLite preparation jobs, source-linked case review and frozen reports. Azure deployment remains future work and is not authorized in the current local implementation scope. Startup and the current workflow are in the [local runbook](local-runbook.md).
+Updated October 31, 2026. The original pre-build plan below is retained as the implementation contract. Under D022, the connected application was implemented; D029 records the later DigitalOcean reviewer deployment. All four screens, authenticated manager/accountant roles, SQLite preparation jobs, source-linked case review, and frozen reports are live at `asset-living-demo.foresyte.xyz`. Startup and the current workflow are in the [local runbook](local-runbook.md); production operations are in the [deployment runbook](../infra/deploy/README.md).
 
 ## Current status
 
@@ -11,7 +11,7 @@ Updated October 31, 2026. The original pre-build plan below is retained as the i
 | Core checks | TypeScript, ESLint, 42 unit tests, the full browser workflow and native Next.js production build passed. Browser/injected-provider tests do not establish live AI success. |
 | Linux containers | Node.js 24.22.2 and embedded SQLite 3.53.4 checked. Authenticated login, source counts, worker preparation and persistence after web restart verified. One import and 67 cases survived; 51 rule-only preparations completed in that earlier isolated check; the current full worker run subsequently completed all 67 cases, including live semantic drafting. Only verification containers/volume were removed. The final post-hardening Linux image rebuild also passed. |
 | Live provider | OpenAI Responses verified with configured `gpt-6.1-sol`: authenticated account/model retrieval, actual Case review tool-loop revision and four-case package summary returned HTTP 200. Full worker preparation passed at 67/67 with no run error, including 16 live semantic drafts and 51 rule-only cases; earlier 401/429 responses are recovery history. |
-| Deployment | Azure provisioning, public HTTPS, managed disk, off-host backup and restore/reboot rehearsal remain separate future work. Local Docker verification is not Azure deployment. |
+| Deployment | GitHub Actions builds and deploys web/worker to the shared DigitalOcean droplet. Public HTTPS, persistent host storage, reviewer credentials, and authenticated smoke tests passed. Scheduled off-host backup and restore/reboot rehearsal remain open. |
 
 The contracts and exit criteria below remain useful for ongoing changes. The local workflow is ready for review: all four screens passed desktop/phone checks with targeted dark-theme, 125% zoom, reduced-motion and keyboard/focus checks. Partial progress, phone package action visibility and dialog focus were corrected and rechecked. The separate small labelled AI evaluation exposed the support-identity gap recorded below. Fixture/reference hardening, 42 unit tests and the full browser regression now pass; the fresh three-case live evaluation passed its mechanical checks and separate Codex qualitative review. No broad accuracy or close-time claim is inferred from selected successful cases.
 
@@ -49,7 +49,7 @@ Original discovery records remain under `data/ai-evaluations/run-op9gRR/`. The c
 | Demo authentication | Better Auth with SQLite/Drizzle, two seeded accounts and server-side manager/accountant permissions | Real session identity and role checks. No public signup, user-management console, email delivery or SSO in the first build. |
 | Reports | Print-ready HTML, browser Print/Save as PDF, case CSV | A compact report without a server-side browser/PDF service. Full source manifest stays in Audit details. |
 | Verification | Vitest, Playwright, TypeScript and ESLint | Accounting/state contracts, workflow integration, rendered interactions, and build checks. |
-| Delivery | Verified local Docker web/worker configuration; selected future Azure target is Ubuntu 24.04 VM, Caddy HTTPS, persistent managed disk and Bicep | Local verification passed; Azure resources and delivery checks are not deployed. |
+| Delivery | GitHub Actions, GHCR, shared DigitalOcean droplet, Caddy HTTPS, and persistent host bind mount | Public route, both reviewer logins, container health, existing-service isolation, and restart persistence passed. Off-host backup/restore rehearsal remains open. |
 
 Installed package versions are recorded in `package.json` and `pnpm-lock.yaml`, including Next.js 16.4.3, React 19.3.1, Better Auth/adapter 1.7.14, better-sqlite3 13.0.3, Drizzle 0.45.4 and OpenAI SDK 7.47.0. The checked Linux runtime is Node 24.22.2 with SQLite 3.53.4. Node 24 remains the selected supported baseline; release image digests are deployment work.
 
@@ -135,7 +135,7 @@ Fixtures and live integration remain distinct in configuration, metadata and doc
 
 ## Implementation order and remaining qualification
 
-Slices 1–4 are implemented and verified locally, including the full 67/67 preparation run, 16 live semantic drafts, selected Case review/package-summary calls and the local Linux/container workflow. Slice 5's bounded UI checks passed on the earlier state; the separate live evaluation exposed a support-identity gap; its fixture/typed-reference/server-guard correction and regression/UI rerun now pass. The fresh live evaluation passed 3/3 mechanical checks and separate Codex qualitative review. Slice 6's Azure deployment is not authorized or completed. The table retains the original deliverables and exit criteria rather than asserting every future deployment check has passed.
+Slices 1–5 are implemented and verified, including the full 67/67 preparation run, 16 live semantic drafts, selected Case review/package-summary calls, the Linux container workflow, and bounded UI checks. The separate live evaluation exposed a support-identity gap; its fixture/typed-reference/server-guard correction and regression/UI rerun now pass. The fresh live evaluation passed 3/3 mechanical checks and separate Codex qualitative review. Slice 6 was completed using the existing DigitalOcean droplet instead of the earlier Azure plan; scheduled off-host backup and restore/reboot rehearsal remain open.
 
 | Slice | Deliverable | Exit check |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ Slices 1–4 are implemented and verified locally, including the full 67/67 prep
 | 3. Investigation and Case review | Live provider smoke check, bounded evidence tools, Screen 3, staff/manager workflow | One Sunset Ridge case reaches supported resolution end to end; other branches and returned/missing/conflicting support remain correct. |
 | 4. Package and export | Screen 4, compact report, immutable package, print view and CSV | Open issues retained, approved/executed/resolved distinguished, historical export stable, no manifest in default report. |
 | 5. Evaluation and UI completion | Remaining source coverage, labelled AI examples, all-screen ui-craft pass, responsive/error/recovery states | Meaningful automated checks plus settled desktop/phone/light/dark/enlarged-text/keyboard/reduced-motion inspection. Record actual findings, false positives, unsupported claims and review burden. |
-| 6. Azure and interview handoff | Bicep/Compose configuration, HTTPS, persistent disk, backup/restore, deployment/rehearsal guide | Reboot/redeploy preserves records; consistent backup restores; hosted workflow works; README and 5–10 minute demonstration route are accurate. |
+| 6. Deployment and interview handoff | Production Compose, GitHub Actions/GHCR, Caddy HTTPS, persistent host data, reviewer credentials, and deployment guide | Hosted workflow and redeploy checks pass; README and demonstration route are accurate. Off-host backup/restore rehearsal remains open. |
 
 Build a working vertical path early, then broaden it. Do not implement four disconnected page demos and postpone persistence, permissions, source linkage or failure handling until the end.
 
@@ -159,23 +159,23 @@ Build a working vertical path early, then broaden it. Do not implement four disc
 
 Use a small labelled evaluation set drawn from varied coding descriptions, valid lookalikes, missing causes and contradictory support. Report evidence quality and limitations; do not claim measured close-time savings from the synthetic pack.
 
-## Azure delivery baseline
+## Production delivery
 
-One VM runs Caddy, web and one worker through Docker Compose. Web/worker mount the same directory on an attached local managed data disk; this includes SQLite's WAL/shared-memory files and immutable uploads. The production data directory is outside the checkout/image. Development can keep its configurable gitignored data directory inside the codebase.
+The existing DigitalOcean droplet runs shared Caddy, the web/API container, and one worker through Docker Compose. Web/worker mount the same host directory; this includes SQLite's WAL/shared-memory files and immutable uploads. The production data directory is outside the checkout/image. Development keeps its configurable gitignored data directory inside the codebase.
 
-Use short transactions, WAL, busy timeout and a patched embedded SQLite build. Verify the actual driver SQLite version against current WAL advisories. Run migrations once during controlled deployment. Back up using a consistent SQLite backup method and retain referenced immutable files; copy completed backups off-host to Blob Storage and rehearse restore. The single VM is a simple demo topology, not high availability.
+Use short transactions, WAL, busy timeout and a patched embedded SQLite build. Verify the actual driver SQLite version against current WAL advisories. Run migrations once during controlled deployment. Back up using a consistent SQLite backup method and retain referenced immutable files; copy completed backups off-host and rehearse restore. The single droplet is a simple reviewer topology, not high availability.
 
-Start capacity planning around 2 vCPU/8 GB and confirm an available SKU/region before provisioning. Pin the Linux target/container dependencies, including the native driver. Add health checks, restart policies and structured server/worker logs. No Redis, managed queue, vector store, separate Python service, or managed agent hosting is required by this workflow.
+The shared 2 vCPU/4 GiB host has explicit 320 MiB web and 384 MiB worker limits. Images are built off-host for `linux/amd64`; health checks, restart policies, bounded logs, pinned SSH host verification, and immutable commit tags are configured. No Redis, managed queue, vector store, separate Python service, or managed agent hosting is required by this workflow.
 
-## Future deployment inputs
+## Remaining production work
 
-The local application and required local checks are complete. The following inputs apply only to separately authorized deployment or a future provider change:
+The application and required deployment checks are complete. Remaining operational work is bounded:
 
-1. Azure subscription/resource group, region/available VM SKU, public hostname/TLS configuration, and hosting duration/cost choice.
-2. Carry the verified OpenAI configuration into deployment when authorized. The final Linux image build, support-identity hardening, 42 unit tests, full browser regression, targeted accountant UI checks and three-case live evaluation passed. Original-source preparation reached 67/67. Credentials remain in the ignored environment; Gateway remains a future check.
-3. Configure deployment account credentials when hosting is authorized. Local manager/accountant accounts already exist; startup does not reset their passwords.
+1. Add scheduled off-host backup for the SQLite database and referenced archives, then rehearse restore and host reboot.
+2. Configure a provider credential only if live AI drafting is required on the shared reviewer deployment. Credentials remain in the ignored server environment; deterministic/manual workflows remain available without them.
+3. Monitor memory, swap, disk, certificate renewal, and the shared reviewer credential for the duration of the review window.
 
-The original planning-only boundary was superseded by D022 for local implementation and verification, and D023 selected OpenAI Responses. Azure inspection/provisioning remains outside the current authorized local work. Local success does not establish production deployment or an accounting-system integration.
+The original planning-only boundary was superseded by D022 for implementation and verification, D023 selected OpenAI Responses, and D029 records the DigitalOcean reviewer deployment. Deployment success does not establish an accounting-system integration or authorize external financial activity.
 
 ## References
 
