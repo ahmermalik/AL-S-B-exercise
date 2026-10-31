@@ -88,7 +88,6 @@ jobs:
             fi
             sleep 5
           done
-          docker image prune -f
           docker logout ghcr.io
           REMOTE
       - name: Verify public application and existing services
@@ -96,4 +95,34 @@ jobs:
           curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_URL/login" > /dev/null
           curl -fsS https://goodrotation.app/ > /dev/null
           curl -fsS https://souschef.foresyte.xyz/login > /dev/null
+      - name: Remove superseded application images
+        run: |
+          ssh "$DROPLET_USER@$DROPLET_HOST" 'bash -s' <<'REMOTE'
+          set -eu
+          app_repository=ghcr.io/ahmermalik/asset-living-close
+          current_image_ref=$(docker inspect asset-living-close-web --format '{{.Config.Image}}')
+          current_image_id=$(docker inspect asset-living-close-web --format '{{.Image}}')
+
+          docker image ls --no-trunc \
+            --format '{{.ID}} {{.Repository}}:{{.Tag}}' "$app_repository" |
+          while read -r image_id image_ref; do
+            if [ "$image_ref" != "$current_image_ref" ]; then
+              echo "removing superseded image $image_ref"
+              docker image rm "$image_ref"
+            fi
+          done
+
+          remaining_ref_count=$(docker image ls --no-trunc \
+            --format '{{.Repository}}:{{.Tag}}' "$app_repository" | wc -l | tr -d ' ')
+          remaining_id_count=$(docker image ls --no-trunc \
+            --format '{{.ID}}' "$app_repository" | sort -u | wc -l | tr -d ' ')
+          if [ "$remaining_ref_count" -ne 1 ] || [ "$remaining_id_count" -ne 1 ]; then
+            echo "expected one local application image/ref; found $remaining_id_count image(s) and $remaining_ref_count ref(s)" >&2
+            exit 1
+          fi
+
+          # Remove untagged layers only. Tagged images owned by other apps remain.
+          docker image prune -f
+          echo "one current application image remains: $current_image_ref ($current_image_id)"
+          REMOTE
 

@@ -114,6 +114,9 @@ credits. Normal unit and browser tests do not require provider credentials.
 - Pushes to `main` build a `linux/amd64` image in GitHub Actions.
 - Images are tagged with the commit SHA and pushed to GHCR.
 - The deploy job connects over pinned-key SSH and recreates the two containers.
+- After health and public checks pass, CI deletes every superseded local image
+  for this application and asserts that exactly one remains. Old SHA tags stay
+  in GHCR for rollback without consuming droplet disk.
 - Shared Caddy terminates HTTPS; the application binds no host port.
 - `asset-living-close-web` is limited to 320 MiB.
 - `asset-living-close-worker` is limited to 384 MiB.

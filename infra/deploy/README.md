@@ -37,6 +37,13 @@ Pushes to `main` and manual workflow runs build and deploy the image. The
 repository secret `DROPLET_SSH_KEY` contains the dedicated deploy key. The
 droplet SSH host key is pinned in the workflow.
 
+After the new containers are healthy and public/existing-service checks pass,
+CI compares local images for `ghcr.io/ahmermalik/asset-living-close` with the
+image ID used by the running web container. It deletes every superseded local
+image, asserts that exactly one unique app image remains, and prunes only
+untagged layers. Tagged images belonging to other applications are untouched.
+Older commit tags remain in GHCR and can be pulled again for rollback.
+
 ## Verification
 
 ```sh
