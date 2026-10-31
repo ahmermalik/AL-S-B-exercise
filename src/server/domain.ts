@@ -114,7 +114,7 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     const invoices = c.facts.invoices as Invoice[], records = s?.approvalRecords || [];
     for (const invoice of invoices) {
       const record = records.find(r => r.invoiceRow === invoice.source.row);
-      if (!record || record.approverRole !== "Regional Manager" || !record.reference.trim() || !record.approvedBeforePayment) missing.push(`Obtain Regional Manager approval before-payment evidence for ${invoice.invoice} (row ${invoice.source.row})`);
+      if (!record || record.approverRole !== "Regional Manager" || !record.reference.trim() || !record.approvedBeforePayment) missing.push(`Obtain Regional Manager approval before-payment evidence for ${invoice.invoice} · ${invoice.vendor}`);
     }
     if (!missing.length) p.summary = `${invoices.length} invoice${invoices.length === 1 ? "" : "s"} now have source-referenced Regional Manager approval records identifying sign-off before payment. The manager reviews this evidence; this does not release a payment.`;
     return p;

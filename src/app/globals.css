@@ -273,7 +273,6 @@ small, .small { font-size: 13px; }
 .step-popover-next { margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; }
 .step-popover-next p { margin-top: 4px; }
 .step-popover-link { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 650; margin-top: 15px; }
-.step-popover-source { font-size: 11px; color: var(--muted); margin-top: 15px; }
 .step-popover-arrow { fill: var(--surface); }
 @keyframes step-popover-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
 .legend { display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px; color: var(--muted); padding: 16px 22px 8px; }

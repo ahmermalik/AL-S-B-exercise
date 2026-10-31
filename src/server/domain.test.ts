@@ -124,6 +124,7 @@ describe("versioned correction workflow",()=>{
   });
   it("reviews actual approver-role records rather than substituting manager approval for Regional sign-off",()=>{
     let c=byTitle("Regional approval");const row=(c.facts.invoices as {source:{row:number}}[])[0].source.row;
+    expect(c.proposals.at(-1)?.missing[0]).toContain("LIMIT-10001 · Approval vendor");expect(c.proposals.at(-1)?.missing[0]).not.toMatch(/\brow\s+\d+/i);
     const base={author:accountant.name,period:"September 2026",explanation:"Approval register extract",transactionId:"",entity:"",postingState:"unknown" as const,paymentState:"unknown" as const,duplicateConfirmed:false,periodOpen:false,correctionAuthorized:false,invoiceRecord:"",ledgerRecord:"",paymentRecord:"",policyRecord:""};
     c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"CFO",reference:"APP-1",approvedBeforePayment:true}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing.length).toBe(1);
     c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"Regional Manager",reference:"APP-2",approvedBeforePayment:true}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing).toEqual([]);

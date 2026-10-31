@@ -22,7 +22,7 @@ export function CloseStepCell({ property, step, asOfBD, selected, onSelect, case
   const symbol = detail.state === "conflict" ? "?" : detail.state === "complete" ? <Check size={14} /> : detail.state === "late" ? "!" : detail.state === "due" ? "○" : "–";
   return <Popover.Root>
     <Popover.Trigger asChild>
-      <motion.button type="button" whileTap={{ scale: .94 }} transition={spring}
+      <motion.button type="button" whileTap={{ scale: .96 }} transition={spring}
         aria-label={`${property.name}: ${step.name}, ${detail.label}; due business day ${step.dueBD}`}
         title={`${step.name} · ${detail.label} · due business day ${step.dueBD}`}
         className={`step-cell step-${detail.state} ${selected ? "step-selected" : ""}`} onClick={onSelect}>{symbol}</motion.button>
@@ -36,7 +36,6 @@ export function CloseStepCell({ property, step, asOfBD, selected, onSelect, case
         <p id={descriptionId} className="step-popover-description">{detail.description}</p>
         {(needsAttention || detail.state === "due") ? <div className="step-popover-next"><strong>Next step · {property.accountant}</strong><p>{detail.state === "conflict" ? "Verify the completion date against the workpaper and correct the tracker if needed." : "Provide the workpaper and confirm completion, or explain the blocker."}</p></div> : <div className="step-popover-owner"><span>Owner</span><strong>{property.accountant}</strong></div>}
         {needsAttention && caseId && <Link className="step-popover-link" href={`/cases/${caseId}`}>Review close blocker<ArrowRight size={14} /></Link>}
-        <p className="step-popover-source">{step.source.sheet} · row {step.source.row}</p>
         </div>
         <Popover.Arrow className="step-popover-arrow" width={12} height={6} />
       </Popover.Content>

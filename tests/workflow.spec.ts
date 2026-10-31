@@ -28,6 +28,10 @@ test("import, staff support, manager approval, verified correction and frozen ha
   const sunset = ws.cases.filter(c => c.propertyId === "P105"); expect(sunset).toHaveLength(4);
   const labor = sunset.find(c => c.kind === "duplicate" && c.title.includes("StaffBridge"))!;
   await page.goto(`/cases/${labor.id}`); await expect(page.getByRole("heading", { name: labor.title, exact: true })).toBeVisible();
+  await expect(page.getByText(/B2 AP Invoices.*row/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Inspect record", exact: true }).first().click();
+  await expect(page.getByRole("dialog")).toContainText(/B2 AP Invoices.*row/i);
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
   const initial = await readCase(context, labor.id);
   const unsupported = await action(context, labor.id, { action: "approve", expectedRevision: initial.revision, proposalId: initial.proposals.at(-1)!.id });
   expect(unsupported.status()).toBe(409);
