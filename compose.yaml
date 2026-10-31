@@ -6,12 +6,11 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_PATH: /var/lib/asset-living/close.sqlite
-      SOURCE_WORKBOOK_PATH: /source/close-pack.xlsx
+      SOURCE_WORKBOOK_PATH: /app/seed/close-pack.xlsx
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
       - close-data:/var/lib/asset-living
-      - ./data/source/close-pack.xlsx:/source/close-pack.xlsx:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
@@ -25,6 +24,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_PATH: /var/lib/asset-living/close.sqlite
+      SOURCE_WORKBOOK_PATH: /app/seed/close-pack.xlsx
     volumes:
       - close-data:/var/lib/asset-living
     depends_on:

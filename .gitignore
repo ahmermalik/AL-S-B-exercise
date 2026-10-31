@@ -33,6 +33,7 @@ secrets/
 *.xls
 *.xlsx
 *.xlsm
+!seed/close-pack.xlsx
 
 # Application build outputs
 node_modules/

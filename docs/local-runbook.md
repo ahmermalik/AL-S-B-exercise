@@ -12,7 +12,7 @@ cp -n .env.example .env.local
 pnpm dev
 ```
 
-An existing configured `.env.local` must be preserved; do not copy over it. Local startup generates `BETTER_AUTH_SECRET` if it is empty; containers require a configured secret. The sample `LOCAL_SEED_PASSWORD` matches the shared walkthrough accounts below; it can be changed before creating a new database. Set `SOURCE_WORKBOOK_PATH` to the supplied workbook or its local copy, or import it through Prepare review after startup. `pnpm dev` runs setup, then starts both Next.js and the worker. Setup creates missing accounts and imports the source only when the database has no selected import; restarting preserves subsequent imports and review history.
+An existing configured `.env.local` must be preserved; do not copy over it. Local startup generates `BETTER_AUTH_SECRET` if it is empty; containers require a configured secret. The sample `LOCAL_SEED_PASSWORD` matches the shared walkthrough accounts below; it can be changed before creating a new database. `pnpm dev` runs setup, then starts both Next.js and the worker. Setup creates missing accounts and loads the tracked `seed/close-pack.xlsx` only when the database has no selected import. It does not start preparation. Restarting preserves subsequent uploads and review history.
 
 The local instance is at **http://127.0.0.1:3000**.
 
@@ -27,7 +27,7 @@ These are two roles within the same application and shared four-screen workflow.
 
 Both local review accounts and the public reviewer deployment use `CloseReview!2026`. It is an intentionally published demonstration credential, not a private production secret. Do not use the shared deployment for confidential data. New installations use `LOCAL_SEED_PASSWORD`; startup does not silently reset existing passwords.
 
-The database is `data/asset-living.sqlite`; the workbook copy is `data/source/close-pack.xlsx`. Both are gitignored, as is `.env.local`. Original files in Downloads are unchanged. Imported source archives are hashed and retained under the data directory.
+The database is `data/asset-living.sqlite`; `.env.local`, runtime uploads, and imported source archives are gitignored. The intentionally public baseline is `seed/close-pack.xlsx`. Imported workbooks are hashed and archived under the data directory; resetting always returns to the first imported baseline.
 
 ## OpenAI
 
@@ -41,7 +41,7 @@ Preparation uses code for duplicate matching, approval evidence and close tracki
 
 ## First workflow
 
-1. Sign in as the manager and open Prepare review. The supplied workbook is already imported on this local installation. Inspect the source notices, then use Start preparation for a fresh import or Run again after a completed run. A new run reuses the import's findings, preserves reviewed work and can regenerate eligible pending AI drafts. Preparation covers the whole workbook; select Sunset Ridge in the workspace afterward.
+1. Sign in as the manager and open Prepare review. The demo workbook is already imported. Inspect the source notices, then use Start preparation or Run again after a completed run. A new run reuses the import's findings, preserves reviewed work and can regenerate eligible pending AI drafts. Preparation covers the whole workbook; select Sunset Ridge in the workspace afterward. A different workbook can be uploaded manually before preparation.
 2. Open Sunset Ridge. The actual data has four findings: StaffBridge duplicate, Office Depot duplicate, grounds coding, and a Regional Manager approval-evidence gap. All remain in scope.
 3. Request evidence for StaffBridge. In a second browser profile/private window, sign in as the accountant, open the same case, and Add support. Load support explicitly to populate the prepared exercise records, or enter the source details manually. Their internal provenance is retained without interface banners.
 4. Prepare proposal from structured evidence, or use Revise with AI against the current case evidence. Review the source/version and remedy as manager, then approve the current proposal.
@@ -93,4 +93,4 @@ docker compose logs -f web worker
 docker compose stop
 ```
 
-The local runtime uses a Docker volume for the entire SQLite directory, including WAL/shared-memory files; source workbook input is mounted read-only. Credentials are supplied through the ignored environment file, not built into the image. Do not remove the volume to restart or update the application. Production uses a host bind mount, shared Caddy, and CI-built GHCR image as documented in the [production runbook](../infra/deploy/README.md). Off-host backup and restore rehearsal remain operational follow-up work.
+The local runtime uses a Docker volume for the entire SQLite directory, including WAL/shared-memory files. The public demo workbook is packaged read-only in the image; runtime uploads and archives stay in the volume. Credentials are supplied through the ignored environment file, not built into the image. Do not remove the volume to restart or update the application. Production uses a host bind mount, shared Caddy, and CI-built GHCR image as documented in the [production runbook](../infra/deploy/README.md). Off-host backup and restore rehearsal remain operational follow-up work.

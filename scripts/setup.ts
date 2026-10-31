@@ -36,7 +36,7 @@ export async function setup() {
       });
     }
   }
-  const workbook = process.env.SOURCE_WORKBOOK_PATH || "data/source/close-pack.xlsx";
+  const workbook = process.env.SOURCE_WORKBOOK_PATH || "seed/close-pack.xlsx";
   if (fs.existsSync(workbook)) {
     const { importWorkbook, getWorkspace } = await import("../src/server/store");
     if (!getWorkspace().source) await importWorkbook(fs.readFileSync(workbook), "September 2026 Close Pack.xlsx");

@@ -107,7 +107,7 @@ function originalSourceMetadata(): OriginalSource | null {
 async function originalWorkbookForReset() {
   const baseline = originalSourceMetadata();
   const archived = baseline ? resolve(/* turbopackIgnore: true */ archiveDirectory(), `${baseline.hash}.xlsx`) : null;
-  const configured = resolve(/* turbopackIgnore: true */ process.env.SOURCE_WORKBOOK_PATH || "data/source/close-pack.xlsx");
+  const configured = resolve(/* turbopackIgnore: true */ process.env.SOURCE_WORKBOOK_PATH || "seed/close-pack.xlsx");
   const path = archived && existsSync(archived) ? archived : existsSync(configured) ? configured : null;
   if (!path) throw new DomainError(409, "The original workbook is unavailable. Restore the source before resetting.");
   let buffer: Buffer;

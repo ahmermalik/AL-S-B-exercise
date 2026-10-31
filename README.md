@@ -15,15 +15,15 @@ reviewing proposed corrections, and freezing a month-end review package.
 Use a normal window for the manager and a private window for the accountant.
 The review path is:
 
-1. Import the supplied close workbook in **Prepare review**.
-2. Run preparation and open a property case.
+1. Open **Prepare review**; the demo workbook is already loaded.
+2. Start preparation and open a property case.
 3. Request evidence as the manager; respond as the accountant.
 4. Review the proposal, execution evidence, and resolution gates.
 5. Save the frozen review package and export HTML or CSV.
 
 This is a shared, resettable environment. Do not upload confidential data. The
-exercise workbook is supplied separately and is not stored in Git. Hosted AI
-drafting is currently disabled; deterministic checks and manual review work.
+tracked demo workbook and its contents are public. Hosted AI drafting is
+currently disabled; deterministic checks and manual review work.
 
 ## Tech stack
 
@@ -69,8 +69,10 @@ pnpm dev
 
 Open http://127.0.0.1:3000 and use the demo credentials above.
 
-- Import the workbook through **Prepare review**, or place it at
-  `data/source/close-pack.xlsx` before startup.
+- The tracked `seed/close-pack.xlsx` loads automatically into an empty database;
+  preparation still starts only when a user clicks **Start preparation**.
+- A user can upload a different workbook through **Prepare review**. Resetting
+  the walkthrough restores the original demo workbook without starting a run.
 - Set `OPENAI_API_KEY` in `.env.local` to enable live drafting.
 - Keep an existing `.env.local` when restarting; setup preserves existing
   accounts, imports, and review history.
@@ -92,9 +94,10 @@ docker compose logs -f web worker
 - Images: `ghcr.io/ahmermalik/asset-living-close`.
 - GitHub deployment key: repository Actions secret, never committed.
 
-Runtime databases, workbooks, credentials, private keys, and deployment state
-are excluded from Git and the Docker build context. GitHub secret scanning and
-push protection are enabled.
+Runtime databases, uploaded workbooks, credentials, private keys, and deployment
+state are excluded from Git and the Docker build context. The only tracked
+workbook is the intentionally public `seed/close-pack.xlsx`, which is packaged
+in the image. GitHub secret scanning and push protection are enabled.
 
 ## Checks
 
@@ -120,8 +123,8 @@ credits. Normal unit and browser tests do not require provider credentials.
 - Shared Caddy terminates HTTPS; the application binds no host port.
 - `asset-living-close-web` is limited to 320 MiB.
 - `asset-living-close-worker` is limited to 384 MiB.
-- SQLite and source files live on a persistent host bind mount, outside the
-  image and repository.
+- SQLite, imported source archives, and uploads live on a persistent host bind
+  mount. The public demo workbook is packaged read-only in the image.
 
 See the [production runbook](infra/deploy/README.md) for exact paths and health
 checks. Scheduled off-host backup and restore rehearsal remain follow-up work.
@@ -133,6 +136,7 @@ checks. Scheduled off-host backup and restore rehearsal remain follow-up work.
 - `src/server/` — auth, database, domain store, import, and AI boundary.
 - `src/worker.ts` — durable preparation worker.
 - `drizzle/` — SQLite migrations.
+- `seed/close-pack.xlsx` — public demo workbook loaded on an empty database.
 - `tests/` — browser workflow and reset coverage.
 - `infra/deploy/` — production Compose, Caddy, environment template, runbook.
 - `.github/workflows/deploy.yml` — build and deployment pipeline.

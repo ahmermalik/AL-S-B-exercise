@@ -13,7 +13,7 @@ services:
       HOSTNAME: 0.0.0.0
       PORT: "3000"
       DATABASE_PATH: /var/lib/asset-living/close.sqlite
-      SOURCE_WORKBOOK_PATH: /var/lib/asset-living/source/close-pack.xlsx
+      SOURCE_WORKBOOK_PATH: /app/seed/close-pack.xlsx
     volumes:
       - type: bind
         source: ./data
@@ -50,7 +50,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_PATH: /var/lib/asset-living/close.sqlite
-      SOURCE_WORKBOOK_PATH: /var/lib/asset-living/source/close-pack.xlsx
+      SOURCE_WORKBOOK_PATH: /app/seed/close-pack.xlsx
     volumes:
       - type: bind
         source: ./data

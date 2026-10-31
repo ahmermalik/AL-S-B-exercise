@@ -18,6 +18,7 @@ COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/drizzle ./drizzle
+COPY --chown=node:node seed/close-pack.xlsx ./seed/close-pack.xlsx
 COPY --chown=node:node scripts/container-start.sh ./container-start.sh
 RUN mkdir -p /var/lib/asset-living && chown node:node /var/lib/asset-living
 USER node

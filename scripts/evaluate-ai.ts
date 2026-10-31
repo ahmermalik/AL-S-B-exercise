@@ -24,7 +24,7 @@ async function main() {
   if (!process.env.OPENAI_API_KEY?.trim() || !process.env.OPENAI_MODEL?.trim()) {
     throw new Error("Configure OPENAI_API_KEY and OPENAI_MODEL before running the live evaluation.");
   }
-  const workbookPath = resolve(process.env.SOURCE_WORKBOOK_PATH || "data/source/close-pack.xlsx");
+  const workbookPath = resolve(process.env.SOURCE_WORKBOOK_PATH || "seed/close-pack.xlsx");
   const directory = resolve("data/ai-evaluations");
   mkdirSync(directory, {recursive: true});
   const runDirectory = mkdtempSync(join(directory, "run-"));

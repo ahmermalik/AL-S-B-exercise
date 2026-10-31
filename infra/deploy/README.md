@@ -20,10 +20,13 @@ source archives, and uploaded workbooks remain on one local filesystem. Never
 copy only the live database file as a backup and never remove the data
 directory during an update.
 
-The first deployment creates the two configured accounts but has no workbook.
-Sign in and upload the supplied workbook through **Prepare review**. AI drafting
-stays unavailable while `OPENAI_API_KEY` is empty; deterministic findings and
-manual review remain available.
+On an empty database, startup creates the two configured accounts and imports
+the public demo workbook packaged at `/app/seed/close-pack.xlsx`. It does not
+start preparation; sign in and click **Start preparation** when ready. A user
+can upload a different workbook, while **Reset walkthrough** restores the
+original demo workbook without starting a run. AI drafting stays unavailable
+while `OPENAI_API_KEY` is empty; deterministic findings and manual review remain
+available.
 
 ## Server-only configuration
 

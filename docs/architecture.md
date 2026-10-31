@@ -50,7 +50,7 @@ The diagram shows both the local and deployed process boundary. Development bind
 
 ## Persistence and source integrity
 
-Store integer cents for money and retain raw source precision, original identifiers, workbook hash, import identity, policy version, sheet/range and scenario clock. Original workbook records remain immutable. Supplemental support has attributable authorship, period, source type, immutable content/version and explicit demonstration provenance where applicable.
+Store integer cents for money and retain raw source precision, original identifiers, workbook hash, import identity, policy version, sheet/range and scenario clock. The intentionally public `seed/close-pack.xlsx` is packaged as the empty-database baseline. Startup imports it without starting preparation; manual uploads can replace the active source, while reset restores the first archived baseline. Original workbook records remain immutable. Supplemental support has attributable authorship, period, source type, immutable content/version and explicit demonstration provenance where applicable.
 
 Separate proposal review, evidence sufficiency, execution, verification and issue resolution. A decision refers to the exact proposal and evidence version. Apply expected-version checks on server mutations and worker commits so an older request or model response cannot overwrite newer support or review. Idempotency applies to imports, run creation, job claims, evidence additions and review submissions.
 
@@ -59,7 +59,7 @@ Reviewed packages preserve materialized scope, register, included wording, unres
 ## SQLite placement and concurrency
 
 - Development: a configurable, gitignored path such as `data/asset-living.sqlite` inside the checkout.
-- Production: `/home/deploy/asset-living-close/data` on the droplet, outside the checkout and container image. Web and worker bind-mount the same whole local directory, including WAL/shared-memory files and immutable uploads.
+- Production: `/home/deploy/asset-living-close/data` on the droplet, outside the checkout and container image. Web and worker bind-mount the same whole local directory, including WAL/shared-memory files and immutable uploads. Only the public empty-database baseline is packaged in the image.
 - Use WAL, a busy timeout and short transactions. Keep database connections on the same host; a network share is unsuitable for this WAL topology.
 - Never hold a database transaction open while waiting for a model. Validate job ownership and expected evidence/case versions immediately before committing a result.
 - Run schema migrations once during controlled deployment. Keep source-controlled migrations and synthetic seed definitions separate from mutable runtime data.
