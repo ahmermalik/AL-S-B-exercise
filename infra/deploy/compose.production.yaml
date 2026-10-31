@@ -1,0 +1,79 @@
+name: asset-living-close
+
+services:
+  web:
+    image: ghcr.io/ahmermalik/asset-living-close:${IMAGE_TAG:-latest}
+    container_name: asset-living-close-web
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ./.env.production
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      DATABASE_PATH: /var/lib/asset-living/close.sqlite
+      SOURCE_WORKBOOK_PATH: /var/lib/asset-living/source/close-pack.xlsx
+    volumes:
+      - type: bind
+        source: ./data
+        target: /var/lib/asset-living
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - internal
+      - foresyte_default
+
+  worker:
+    image: ghcr.io/ahmermalik/asset-living-close:${IMAGE_TAG:-latest}
+    container_name: asset-living-close-worker
+    command: worker
+    restart: unless-stopped
+    init: true
+    env_file:
+      - ./.env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_PATH: /var/lib/asset-living/close.sqlite
+      SOURCE_WORKBOOK_PATH: /var/lib/asset-living/source/close-pack.xlsx
+    volumes:
+      - type: bind
+        source: ./data
+        target: /var/lib/asset-living
+    depends_on:
+      web:
+        condition: service_healthy
+    stop_grace_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - internal
+
+networks:
+  internal:
+  foresyte_default:
+    external: true
+

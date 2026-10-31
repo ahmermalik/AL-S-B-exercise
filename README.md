@@ -4,6 +4,11 @@ This project supports Scenario B of the Asset Living VP Business Operations and 
 
 Planning began on October 29, 2026. The local application and required local checks are complete: all four screens use authenticated server endpoints, SQLite, a durable preparation worker, versioned review cases and frozen reports. Run it at **http://127.0.0.1:3000** using the [local runbook](docs/local-runbook.md).
 
+Production deployment configuration for the shared DigitalOcean droplet lives
+in [`infra/deploy`](infra/deploy/README.md). Images are built in GitHub Actions,
+runtime state stays on a persistent host directory, and the web/worker
+containers have explicit memory limits.
+
 ## Start locally
 
 Use Node 24 (the exact target is in `.node-version`) and pnpm 11.8.0. From the repository directory:
