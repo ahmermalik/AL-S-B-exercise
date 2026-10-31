@@ -3,10 +3,36 @@ data/
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
 *.sqlite
 *.sqlite-*
 *.db
 *.db-*
+*.dump
+*.backup
+
+# Private keys, credential exports, and local tool authentication
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.kdbx
+id_rsa*
+id_ed25519*
+credentials*.json
+service-account*.json
+kubeconfig*
+.npmrc
+secrets/
+*.tfstate
+*.tfstate.*
+
+# Supplied accounting workbooks and local source exports
+*.xls
+*.xlsx
+*.xlsm
 
 # Application build outputs
 node_modules/
