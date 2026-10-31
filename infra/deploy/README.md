@@ -26,7 +26,7 @@ manual review remain available.
 ## Server-only configuration
 
 Create `/home/deploy/asset-living-close/.env.production` from the committed
-example. Keep it mode `600` and never commit it. Changing
+`.env.example`. Keep it mode `600` and never commit it. Changing
 `LOCAL_SEED_PASSWORD` does not reset already-created account passwords.
 
 ## Deployment
