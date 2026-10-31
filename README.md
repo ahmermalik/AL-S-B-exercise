@@ -1,81 +1,64 @@
 # Asset Living month-end close prototype
 
-A working Scenario B prototype for reviewing month-end accounting exceptions.
-It imports a close workbook, runs deterministic and bounded AI-assisted checks,
-coordinates staff/manager review, and freezes an auditable review package.
+A role-based workflow for finding accounting exceptions, collecting support,
+reviewing proposed corrections, and freezing a month-end review package.
 
-## Review the application
+## Live demo
 
-**Live application:** https://asset-living-demo.foresyte.xyz
+**https://asset-living-demo.foresyte.xyz**
 
 | Role | Login | Password |
 | --- | --- | --- |
 | Accounting manager | `manager@assetliving.com` | `CloseReview!2026` |
 | Staff accountant | `accountant@assetliving.com` | `CloseReview!2026` |
 
-Use a normal window for the manager and a private window for the accountant to
-exercise the handoff. This is a shared, resettable review environment; do not
-upload confidential or production data. The supplied exercise workbook is not
-stored in Git and must be imported through **Prepare review**. Live AI drafting
-is currently disabled on the hosted demo; deterministic preparation and the
-complete manual review workflow remain available.
+Use a normal window for the manager and a private window for the accountant.
+The review path is:
 
-Suggested review path:
+1. Import the supplied close workbook in **Prepare review**.
+2. Run preparation and open a property case.
+3. Request evidence as the manager; respond as the accountant.
+4. Review the proposal, execution evidence, and resolution gates.
+5. Save the frozen review package and export HTML or CSV.
 
-1. Sign in as the manager and import the supplied workbook.
-2. Start preparation, then open a property and one of its cases.
-3. Request evidence as the manager and respond as the accountant.
-4. Review the versioned proposal, execution evidence, and resolution gates.
-5. Save a review package and inspect its frozen HTML/CSV output.
+This is a shared, resettable environment. Do not upload confidential data. The
+exercise workbook is supplied separately and is not stored in Git. Hosted AI
+drafting is currently disabled; deterministic checks and manual review work.
 
-## What is implemented
+## Tech stack
 
-- Four connected screens: preparation, close workspace, case review, and
-  review package.
-- Authenticated manager/accountant roles with server-side authorization.
-- Deterministic duplicate, coding, variance, approval-evidence, and close
-  checks before any model interpretation.
-- A separate durable worker with leases, retries, cancellation, bounded tools,
-  and version checks.
-- Immutable source references, attributable evidence, explicit execution
-  records, and frozen package snapshots.
-- Optional OpenAI Responses integration for supported commentary and revision;
-  provider failure preserves findings and manual review.
-- Responsive desktop/phone UI, dark theme, keyboard/focus behavior, and
-  print-ready reports.
+- **Language/runtime:** TypeScript, Node.js 24, pnpm.
+- **Web application:** Next.js 16 App Router, React 19, Tailwind CSS 4.
+- **API:** authenticated Next.js route handlers in the same deployable service.
+- **Database:** SQLite in WAL mode, Drizzle ORM, `better-sqlite3`.
+- **Authentication:** Better Auth with manager/accountant server-side roles.
+- **Workbook intake:** ExcelJS and Zod.
+- **Background processing:** separate durable Node worker with leases and
+  version checks.
+- **AI boundary:** OpenAI Responses with bounded, case-scoped evidence tools;
+  optional at runtime.
+- **Testing:** Vitest, Playwright, TypeScript, and ESLint.
+- **Delivery:** Docker Compose, Caddy, GitHub Actions, GHCR, DigitalOcean.
 
-## Architecture and key decisions
+## Architecture
 
-| Concern | Decision | Why |
-| --- | --- | --- |
-| Web and API | Next.js 16 standalone Node application | One typed deployment boundary for UI, auth, and server endpoints. |
-| Background work | Separate Node worker | Long preparation runs survive requests and can recover expired leases. |
-| Persistence | SQLite 3 in WAL mode through Drizzle and `better-sqlite3` | The workflow is single-host and modest-concurrency; local transactions keep the prototype simple and auditable. |
-| Authentication | Better Auth email/password with manager/accountant roles | Preserves attributable handoffs without adding an identity platform to the exercise. |
-| AI boundary | OpenAI Responses with application-owned evidence tools | The model can interpret and draft, but cannot run arbitrary SQL, post entries, send reports, or bypass review gates. |
-| Reports | Materialized HTML/CSV package snapshots | Historical packages render from frozen content rather than mutable current cases. |
-| Hosting | Two containers on the existing DigitalOcean droplet behind Caddy | Lowest incremental cost; Azure is not part of the current application runtime. |
+- Next.js owns the UI, authentication, and HTTP API.
+- A separate worker claims persisted preparation jobs; work is not tied to a
+  browser request or tab.
+- Web and worker share one local SQLite directory so the database, WAL files,
+  source archives, and uploads remain on the same filesystem.
+- Deterministic accounting checks run before model interpretation.
+- The model can retrieve scoped evidence and draft wording; it cannot execute
+  arbitrary SQL, post journal entries, approve payments, or send reports.
+- Cases use evidence/revision gates so stale requests or model responses cannot
+  overwrite newer review work.
+- Saved packages are materialized snapshots; historical exports do not change
+  when current cases change.
 
-The application deliberately does **not** post to an accounting system, approve
-payments, deliver owner reports, or treat model output as evidence.
-
-## Where state is stored
-
-| Environment | Location |
-| --- | --- |
-| Local database and archives | `data/asset-living.sqlite` and adjacent `data/` content |
-| Local configuration | `.env.local` |
-| Production database, WAL, uploads, and manual backups | `/home/deploy/asset-living-close/data` on the droplet |
-| Production configuration | `/home/deploy/asset-living-close/.env.production` with mode `600` |
-| Container images | `ghcr.io/ahmermalik/asset-living-close` |
-
-Runtime state, workbooks, databases, credentials, private keys, and deployment
-secrets are ignored by Git and excluded from the Docker build context. GitHub
-secret scanning and push protection are enabled.
+Key tradeoff: SQLite and a single host keep the reviewer deployment simple and
+cheap, but this is not a high-availability architecture.
 
 ## Run locally
-
-Requirements: Node 24 and pnpm 11.8.0.
 
 ```sh
 corepack enable
@@ -84,19 +67,36 @@ cp -n .env.example .env.local
 pnpm dev
 ```
 
-Open http://127.0.0.1:3000 and use the credentials above. On a fresh database,
-import the workbook through **Prepare review** or place it at
-`data/source/close-pack.xlsx`. Add `OPENAI_API_KEY` to `.env.local` to enable
-live drafting; deterministic preparation and manual review work without it.
+Open http://127.0.0.1:3000 and use the demo credentials above.
 
-Local Docker verification uses the same web/worker split:
+- Import the workbook through **Prepare review**, or place it at
+  `data/source/close-pack.xlsx` before startup.
+- Set `OPENAI_API_KEY` in `.env.local` to enable live drafting.
+- Keep an existing `.env.local` when restarting; setup preserves existing
+  accounts, imports, and review history.
+
+Docker runs the same web/worker split:
 
 ```sh
 docker compose up --build -d
 docker compose logs -f web worker
 ```
 
-## Verify the repository
+## Storage and secrets
+
+- Local state: `data/asset-living.sqlite` and adjacent `data/` archives.
+- Local configuration: `.env.local`.
+- Production state: `/home/deploy/asset-living-close/data` on the droplet.
+- Production configuration:
+  `/home/deploy/asset-living-close/.env.production` with mode `600`.
+- Images: `ghcr.io/ahmermalik/asset-living-close`.
+- GitHub deployment key: repository Actions secret, never committed.
+
+Runtime databases, workbooks, credentials, private keys, and deployment state
+are excluded from Git and the Docker build context. GitHub secret scanning and
+push protection are enabled.
+
+## Checks
 
 ```sh
 pnpm typecheck
@@ -106,42 +106,39 @@ pnpm test:e2e
 pnpm build
 ```
 
-The checked implementation has passed type checking, linting, unit tests, both
-role-based browser workflows, shared-reset coverage, the production image
-build, authenticated container smoke tests, and restart-persistence checks.
-Live provider evaluation is separate because it consumes API credits.
+`pnpm evaluate:ai` is a separate live-provider evaluation and consumes API
+credits. Normal unit and browser tests do not require provider credentials.
 
 ## Deployment
 
-Pushes to `main` build a `linux/amd64` image in GitHub Actions, push it to GHCR,
-and deploy through SSH. The droplet runs:
+- Pushes to `main` build a `linux/amd64` image in GitHub Actions.
+- Images are tagged with the commit SHA and pushed to GHCR.
+- The deploy job connects over pinned-key SSH and recreates the two containers.
+- Shared Caddy terminates HTTPS; the application binds no host port.
+- `asset-living-close-web` is limited to 320 MiB.
+- `asset-living-close-worker` is limited to 384 MiB.
+- SQLite and source files live on a persistent host bind mount, outside the
+  image and repository.
 
-- `asset-living-close-web` — Next.js UI and API routes, limited to 320 MiB.
-- `asset-living-close-worker` — durable preparation worker, limited to 384 MiB.
-- Shared Caddy — HTTPS and reverse proxy; the app binds no host port.
-
-SQLite and source archives live outside the image on the persistent host bind
-mount. See the [production runbook](infra/deploy/README.md) for the exact layout
-and health checks.
+See the [production runbook](infra/deploy/README.md) for exact paths and health
+checks. Scheduled off-host backup and restore rehearsal remain follow-up work.
 
 ## Repository map
 
-| Path | Purpose |
-| --- | --- |
-| `src/app/` | Screens and authenticated HTTP routes |
-| `src/components/` | Shared application UI |
-| `src/server/` | Auth, database, domain store, workbook import, and AI boundary |
-| `src/worker.ts` | Durable preparation worker |
-| `drizzle/` | Versioned SQLite migrations |
-| `tests/` | Browser workflow and reset coverage |
-| `infra/deploy/` | Production Compose, Caddy, environment template, and runbook |
-| `.github/workflows/deploy.yml` | Build and deployment pipeline |
+- `src/app/` — screens and authenticated routes.
+- `src/components/` — shared UI.
+- `src/server/` — auth, database, domain store, import, and AI boundary.
+- `src/worker.ts` — durable preparation worker.
+- `drizzle/` — SQLite migrations.
+- `tests/` — browser workflow and reset coverage.
+- `infra/deploy/` — production Compose, Caddy, environment template, runbook.
+- `.github/workflows/deploy.yml` — build and deployment pipeline.
 
-## Deeper documentation
+## Detailed docs
 
 - [Architecture](docs/architecture.md)
 - [Decision log](docs/decisions.md)
-- [Local runbook and complete walkthrough](docs/local-runbook.md)
+- [Local runbook](docs/local-runbook.md)
 - [Product scope](docs/product-scope.md)
 - [Screens and workflow](docs/screens-and-workflow.md)
-- [Implementation plan and verification history](docs/implementation-plan.md)
+- [Implementation and verification history](docs/implementation-plan.md)
