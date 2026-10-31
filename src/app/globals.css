@@ -135,7 +135,6 @@ small, .small { font-size: 13px; }
 .brand { display: flex; align-items: center; gap: 20px; color: white; flex-shrink: 0; }
 .brand:hover { text-decoration: none; }
 .brand-logo { width: 158px; height: auto; }
-.brand-subtitle { border-left: 1px solid #ffffff4d; padding-left: 19px; font-size: 14px; color: #d8ebf5; }
 .main-nav { display: flex; align-self: stretch; align-items: stretch; gap: 5px; margin: 0 auto; }
 .main-nav a { display: flex; align-items: center; gap: 8px; color: #d2e4f1; padding: 0 14px; font-size: 14px; white-space: nowrap; position: relative; }
 .main-nav a:hover { color: white; text-decoration: none; background: #ffffff0c; }
@@ -389,7 +388,7 @@ input[type=file] { max-width: 100%; padding: 10px; }
 
 @media(max-width:1250px) {
   .app-header { gap: 22px; padding: 0 26px; }
-  .brand-subtitle, .account > div, .account .account-label { display: none; }
+  .account > div, .account .account-label { display: none; }
   .main-nav a { padding: 0 12px; }
 }
 @media(max-width:1000px) {

@@ -58,7 +58,7 @@ export function Shell({ user, children }: { user: User; children: ReactNode }) {
   return <UserContext.Provider value={user}><LaunchIntro><div className="app-shell">
     <a className="skip-link" href="#main">Skip to content</a>
     <header className="app-header">
-      <Link href="/" className="brand" aria-label="Asset Living Close review"><Image className="brand-logo" src="/brand/asset-living-white.svg" width={191} height={40} alt="Asset Living" priority /><span className="brand-subtitle">Close review</span></Link>
+      <Link href="/" className="brand" aria-label="Asset Living home"><Image className="brand-logo" src="/brand/asset-living-white.svg" width={191} height={40} alt="Asset Living" priority /></Link>
       <nav className="main-nav" aria-label="Main navigation" onMouseLeave={() => setHovered(null)} onBlur={() => setHovered(null)}>{navItems.map(({ href, label, short, Icon, active }) => {
         const current = active(pathname);
         return <Link key={href} className={current ? "active" : ""} href={href} aria-current={current ? "page" : undefined} onMouseEnter={() => setHovered(href)} onFocus={() => setHovered(href)}>
