@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { WorkspaceScreen } from "@/components/workspace";
-type Params = Promise<Record<string, string | string[] | undefined>>;
-export default async function Page({ searchParams }: { searchParams: Params }) {
-  const params = await searchParams, one = (key: string) => typeof params[key] === "string" ? params[key] : undefined;
-  return <WorkspaceScreen initial={{ filter: one("filter"), accountant: one("accountant"), stage: one("stage"), property: one("property"), view: one("view") }} />;
+export default async function Page() {
+  await connection();
+  return <WorkspaceScreen />;
 }
 export const metadata: Metadata = { title: "Workspace" };

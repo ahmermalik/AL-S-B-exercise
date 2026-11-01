@@ -57,9 +57,10 @@ provider is configured; deterministic checks and manual review work without it.
 - Variance cases include the property's invoices for that category, so drafts
   describe what the AP register shows and frame timing or completeness as
   questions rather than causes.
-- The manager-only priorities briefing is drafted from code-computed facts; any
-  number, person, amount, or link not in those facts is rejected. It is cached
-  per review state and refreshed when review state changes.
+- For manager priorities, AI selects source-linked facts and compatible next
+  actions. Code renders the factual wording, counts, names, amounts and links;
+  the model cannot introduce its own factual claims. Briefings are cached per
+  review state and refreshed when review state changes.
 - Cases use evidence/revision gates so stale requests or model responses cannot
   overwrite newer review work.
 - Saved packages are materialized snapshots; historical exports do not change

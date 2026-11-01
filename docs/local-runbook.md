@@ -39,6 +39,17 @@ Earlier HTTP 401 `invalid_api_key` and HTTP 429 `credit_balance_exhausted` respo
 
 Preparation uses code for duplicate matching, approval evidence and close tracking. AI drafting targets coding and variance cases; direct case revision and package summaries also use the live provider. A provider failure stops further model requests in that run. Retry the affected drafting after restoring provider access.
 
+## Manager demo flow
+
+Start with a fresh preparation after **Reset walkthrough** when demonstrating the new invoice context; rerunning preparation preserves existing cases and does not enrich older ones.
+
+1. Open Workspace: expect 18 properties needing follow-up, six commentary discrepancies, nine threshold reviews and seven unusual-amount flags.
+2. Select J. Ramirez in the matrix: 31 of 45 earlier steps are overdue across nine properties. Use the main Workspace navigation to return to all 38 active properties.
+3. Inspect the seven amount flags, including the invoice below $10,000. Amount verification remains outstanding; the application has placed no payment hold.
+4. Open the P114 variance case: its evidence includes four related AP rows, including the August-dated invoice. P107 Utilities has no related AP rows. AI can draft observations and questions without treating either pattern as an established cause.
+5. Accept P114 wording, then return to Workspace. Five properties should remain in the missing-wording card and its drill-down. The original tracker and outstanding ledger support remain unchanged.
+6. Save the internal review package with its remaining support gaps visible. The priorities briefing uses code-rendered facts; AI chooses their order and a compatible next action.
+
 ## First workflow
 
 1. Sign in as the manager and open Prepare review. The demo workbook is already imported. Inspect the source notices, then use Start preparation or Run again after a completed run. A new run reuses the import's findings, preserves reviewed work and can regenerate eligible pending AI drafts. Preparation covers the whole workbook; select Sunset Ridge in the workspace afterward. A different workbook can be uploaded manually before preparation.
@@ -69,7 +80,7 @@ pnpm test:e2e
 pnpm build
 ```
 
-Latest recorded local checks: type/lint, 51 unit tests, the accounting and shared-reset browser workflows, and the Linux production image build passed. The reset tests use isolated databases; the working database was not cleared. All four screens were checked on desktop/phone, with targeted dark-theme, 125% zoom, reduced-motion and keyboard/focus states. Partial progress, phone package actions and dialog focus were corrected and rechecked.
+November 1 demo fixes passed typecheck, lint, 83 unit tests, both browser workflows and an isolated production build. Browser regressions cover returning from a matrix filter to all properties, retaining pagination through the amount dialog, and accepting P114 wording so both the commentary card and drill-down show five properties. A bounded live priorities request passed in one call with the grounded selection schema. Hosted preparation after reset completed 67/67; P114 has four related AP records and P107 has none. The browser tests use isolated databases. Earlier desktop/phone, dark-theme, 125% zoom, reduced-motion and keyboard/focus checks are recorded in the implementation history.
 
 The browser tests use an isolated `data/e2e/workspace.sqlite` database and archive directory on port 3101 with provider credentials disabled; they never modify the working database or spend API credits. Stop the native development server before using the default test runner, because Next.js permits one development server per project output directory. Test setup resets only its own database. The financial workflow covers role denial, missing support, staff/manager transitions, refreshed evidence, package creation, AI-unavailable recovery, immutable exports and a phone viewport. The reset test covers confirmation/cancel, both role sessions, stale requests, browser drafts, shared-window reload and starting preparation again.
 

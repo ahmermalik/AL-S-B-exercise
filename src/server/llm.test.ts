@@ -1,6 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { CaseDetail } from "../shared/types";
 import { AiOutputError, AiUnavailableError, briefingIssue, draftBriefing, draftSummary, isAiConfigured, reviseCaseWithAi, type ProposalInput, type ResponsesTransport } from "./llm";
+import { buildBriefingCatalog, renderBriefingSelection } from "./briefing-grounding";
+import { parseWorkbook, type ParsedWorkbook } from "./import";
+import { findCases } from "./domain";
+import { briefingInput } from "./operations";
 
 type StubResponse = Awaited<ReturnType<ResponsesTransport["create"]>>;
 function response(text: string, output: StubResponse["output"] = []): StubResponse {
@@ -148,35 +153,100 @@ describe("package summary boundary", () => {
 });
 
 describe("priorities briefing boundary", () => {
-  const facts = { asOfBD: 6, ownerReportDueBD: 8, overdueSteps: { total: 36, byAccountantPortfolio: [{ accountant: "J. Ramirez", overdue: 31, overduePercent: 69, openPropertiesByOverdueSteps: [{ property: "The Grove at Kingwood", overdueSteps: 5 }] }] }, commentary: { awaitingAcceptedWording: 6, thresholdReviewsDue: { count: 9 } }, amountVerification: { pendingAmount: "$159,233.84" } };
-  const links = { commentary: "Variance commentary cases", "accountant:J. Ramirez": "J. Ramirez portfolio", "property:P104": "The Grove at Kingwood" };
+  let parsed: ParsedWorkbook, cases: CaseDetail[], input: ReturnType<typeof briefingInput>;
+  beforeAll(async () => {
+    parsed = await parseWorkbook(readFileSync("seed/close-pack.xlsx"), "close-pack.xlsx");
+    cases = findCases(parsed);
+    input = briefingInput(parsed, cases);
+  });
   const valid = { items: [
-    { text: "Confirm where commentary for the 6 Complete steps was written, or reopen them before BD8; the 9 steps due today need threshold confirmation only.", links: ["commentary"] },
-    { text: "Review recovery of 31 of 36 overdue steps with J. Ramirez, starting with The Grove at Kingwood (five steps).", links: ["accountant:J. Ramirez", "property:P104"] },
+    { factIds: ["commentary:wording", "commentary:threshold"], actionId: "reconcile-commentary" },
+    { factIds: ["portfolio:J. Ramirez", "property:P104:overdue"], actionId: "confirm-recovery" },
+    { factIds: ["amounts:pending"], actionId: "verify-amounts" },
   ] };
-  it("accepts a briefing whose numbers, people and links all come from the supplied facts", async () => {
-    expect(briefingIssue(valid, facts, links)).toBeNull();
+  it("renders selected workbook facts, exact relational counts and their bound work links", async () => {
+    expect(briefingIssue(valid, input.facts, input.links)).toBeNull();
     const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValue(response(JSON.stringify(valid)));
-    const result = await draftBriefing(facts, links, { transport: { create } });
-    expect(result.items).toHaveLength(2); expect(create).toHaveBeenCalledTimes(1);
+    const activity: Record<string, unknown>[] = [];
+    const result = await draftBriefing(input.facts, input.links, { transport: { create }, onActivity: event => activity.push(event) });
+    expect(result.items).toHaveLength(3); expect(create).toHaveBeenCalledTimes(1);
+    expect(result.items[0]).toMatchObject({ text: expect.stringContaining("6 properties marked Complete"), links: ["commentary", "threshold"] });
+    expect(result.items[0].text).toContain("9 properties need threshold confirmation");
+    expect(result.items[1]).toEqual({ text: "J. Ramirez's portfolio has 31 of 36 tracker-reported overdue steps. The Grove at Kingwood has 5 tracker-reported overdue steps. Confirm blockers and agree recovery owners and checkpoints with the responsible accountant.", links: ["accountant:J. Ramirez", "property:P104"] });
+    expect(result.items[2].text).toContain("6 amount-verification flags are marked Pending in the register, totaling $159,233.84");
+    expect(result.items.every(item => item.text.split(/\s+/).length <= 45)).toBe(true);
+    expect(result.items.flatMap(item => item.text.split(/\s+/)).length).toBeLessThanOrEqual(120);
+    expect(activity).toContainEqual(expect.objectContaining({ event: "briefing_selection", selection: valid }));
     expect(String(create.mock.calls[0][0].instructions)).toContain("not a judgment about a person");
+    const schema = create.mock.calls[0][0].text?.format;
+    expect(JSON.stringify(schema)).toContain("portfolio:J. Ramirez");
+    expect(JSON.stringify(schema)).not.toContain('"text"');
   });
   it.each([
-    [{ items: [{ text: "Recover 40 overdue steps first.", links: ["commentary"] }] }, "number 40"],
-    [{ items: [{ text: "Escalate to K. Patel today.", links: ["commentary"] }] }, "not a person"],
-    [{ items: [{ text: "Review the commentary cases.", links: ["stage:Payroll allocation"] }] }, "link keys"],
-    [{ items: [{ text: "Verify the $159K of flagged invoices.", links: ["commentary"] }] }, "exactly as supplied"],
-    [{ items: [{ text: "Verify $1,000,000 of flagged invoices.", links: ["commentary"] }] }, "not in the supplied facts"],
-    [{ items: [{ text: "I recommend reviewing commentary first.", links: ["commentary"] }] }, "first person"],
-    [{ items: [{ text: "Review cases in awaiting_evidence status.", links: ["commentary"] }] }, "system field"],
-  ])("rejects unsupported briefing content", (draft, message) => { expect(briefingIssue(draft, facts, links)).toContain(message); });
+    { items: [{ text: "Recover 104 overdue steps before BD8.", links: ["overdue"] }] },
+    { items: [{ factIds: ["portfolio:J. Ramirez"], actionId: "confirm-recovery", text: "J. Ramirez owns 36 overdue steps." }] },
+    { items: [{ factIds: ["portfolio:J. Ramirez"], actionId: "confirm-recovery", text: "Ask Morgan Patel at Fake Heights." }] },
+    { items: [{ factIds: ["portfolio:Morgan Patel"], actionId: "confirm-recovery" }] },
+    { items: [{ factIds: ["property:Fake Heights:overdue"], actionId: "confirm-recovery" }] },
+    { items: [{ factIds: ["amounts:pending"], actionId: "pay-invoices" }] },
+    { items: [{ factIds: ["amounts:pending"], actionId: "verify-amounts", links: ["accountant:J. Ramirez"] }] },
+  ])("rejects model-authored claims, invented identities, unknown selections and link overrides", draft => {
+    expect(briefingIssue(draft, input.facts, input.links)).toContain("Select only supplied");
+  });
+  it.each([
+    [{ items: [{ factIds: ["portfolio:J. Ramirez"], actionId: "verify-amounts" }] }, "compatible"],
+    [{ items: [{ factIds: ["portfolio:J. Ramirez", "property:P125:overdue"], actionId: "confirm-recovery" }] }, "same portfolio or stage"],
+    [{ items: [{ factIds: ["portfolio:J. Ramirez", "stage:Bank reconciliation"], actionId: "confirm-recovery" }] }, "same portfolio or stage"],
+    [{ items: [{ factIds: ["commentary:wording"], actionId: "review-commentary-evidence" }] }, "accepted-wording"],
+    [{ items: [{ factIds: ["commentary:threshold"], actionId: "reconcile-commentary" }] }, "compatible"],
+    [{ items: [valid.items[1], valid.items[1]] }, "only once"],
+  ])("rejects incompatible actions, cross-portfolio recovery claims and repeated facts", (draft, message) => {
+    expect(briefingIssue(draft, input.facts, input.links)).toContain(message);
+  });
+  it("uses current wording disposition while preserving the imported tracker count", () => {
+    const reviewed = structuredClone(cases);
+    reviewed.find(c => c.kind === "variance" && c.propertyId === "P114")!.proposals.at(-1)!.disposition = "approved";
+    reviewed.find(c => c.kind === "close" && c.propertyId === "P104")!.status = "dismissed";
+    const current = briefingInput(parsed, reviewed), catalog = buildBriefingCatalog(current.facts, current.links);
+    expect(catalog.facts.find(f => f.id === "commentary:wording")!.text).toContain("5 properties");
+    expect(catalog.facts.find(f => f.id === "commentary:accepted")!.text).toContain("1 property; final issue resolution is not recorded");
+    expect(catalog.facts.find(f => f.id === "portfolio:J. Ramirez")!.text).toContain("31 of 36 tracker-reported overdue steps");
+    expect(catalog.facts.find(f => f.id === "property:P104:overdue")).toBeUndefined();
+    expect(briefingIssue({ items: [{ factIds: ["commentary:accepted"], actionId: "review-commentary-evidence" }] }, current.facts, current.links)).toBeNull();
+    expect(briefingIssue({ items: [{ factIds: ["commentary:accepted"], actionId: "locate-commentary" }] }, current.facts, current.links)).toContain("awaiting wording");
+  });
+  it("does not invent missing support when wording is accepted and all evidence requirements are satisfied", () => {
+    const reviewed = structuredClone(cases), c = reviewed.find(c => c.kind === "variance" && c.propertyId === "P114")!;
+    c.status = "verified";
+    c.proposals.at(-1)!.disposition = "approved";
+    c.proposals.at(-1)!.missing = [];
+    const current = briefingInput(parsed, reviewed), catalog = buildBriefingCatalog(current.facts, current.links);
+    const result = renderBriefingSelection({ items: [{ factIds: ["commentary:accepted"], actionId: "review-commentary-evidence" }] }, catalog);
+    expect(result).toMatchObject({ issue: null, items: [{ text: expect.stringContaining("final issue resolution is not recorded") }] });
+    if ("items" in result) expect(result.items[0].text).not.toContain("supporting evidence remains outstanding");
+  });
+  it("handles a quiet snapshot without inventing an intervention and refuses a catalog without work links", async () => {
+    const quiet = structuredClone(input.facts);
+    quiet.followUp = { properties: 0, withOpenOverdueSteps: 0, withRequiredCommentaryOutstanding: 0, withBoth: 0 };
+    quiet.overdueSteps = { ...quiet.overdueSteps, total: 0, byStage: [], byAccountantPortfolio: [], outsideLargestPortfolio: null };
+    quiet.commentary = { ...quiet.commentary, awaitingAcceptedWording: 0, markedCompleteWithoutRequiredCommentary: [], thresholdReviewsDue: { count: 0, note: "" }, completionDateConflicts: 0 };
+    quiet.amountVerification = { ...quiet.amountVerification, flaggedInvoices: 0, pendingApproval: 0 };
+    const catalog = buildBriefingCatalog(quiet, input.links);
+    const result = renderBriefingSelection({ items: [{ factIds: ["followup:properties"], actionId: "review-remaining-close" }] }, catalog);
+    expect(result).toMatchObject({ issue: null, items: [{ text: expect.stringContaining("no open overdue-step or required-commentary follow-up"), links: ["followup"] }] });
+    expect(briefingIssue({ items: [{ factIds: ["followup:properties"], actionId: "review-followup" }] }, quiet, input.links)).toContain("only when open");
+    const create = vi.fn<ResponsesTransport["create"]>();
+    await expect(draftBriefing(quiet, {}, { transport: { create } })).rejects.toThrow("No supported briefing facts");
+    expect(create).not.toHaveBeenCalled();
+  });
   it("allows one repair, then refuses rather than show an unsupported briefing", async () => {
-    const bad = { items: [{ text: "Recover 40 overdue steps first.", links: ["commentary"] }] };
+    const bad = { items: [{ factIds: ["portfolio:J. Ramirez"], actionId: "verify-amounts" }] };
     const repaired = vi.fn<ResponsesTransport["create"]>().mockResolvedValueOnce(response(JSON.stringify(bad))).mockResolvedValueOnce(response(JSON.stringify(valid)));
-    await expect(draftBriefing(facts, links, { transport: { create: repaired } })).resolves.toMatchObject({ items: valid.items });
-    expect(String(JSON.stringify(repaired.mock.calls[1][0].input))).toContain("number 40");
+    await expect(draftBriefing(input.facts, input.links, { transport: { create: repaired } })).resolves.toMatchObject({ items: expect.any(Array) });
+    expect(repaired).toHaveBeenCalledTimes(2);
+    expect(String(JSON.stringify(repaired.mock.calls[1][0].input))).toContain("compatible with all selected facts");
     const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValue(response(JSON.stringify(bad)));
-    await expect(draftBriefing(facts, links, { transport: { create } })).rejects.toBeInstanceOf(AiOutputError);
+    await expect(draftBriefing(input.facts, input.links, { transport: { create } })).rejects.toBeInstanceOf(AiOutputError);
     expect(create).toHaveBeenCalledTimes(2);
   });
 });
