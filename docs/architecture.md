@@ -86,6 +86,10 @@ The Azure AI Gateway remains a permitted future provider route. Enable it only a
 
 Validate amounts, source existence, case scope, policy references and output fields in code. A valid schema does not establish the truth of a causal explanation. The LLM interprets varied descriptions and attributable support, proposes specific follow-ups and revises supported wording. It cannot invent settlement, approval authority or posting dates. New support reopens affected review rather than silently confirming the model's earlier result.
 
+Variance cases carry the property's AP rows for the category as original evidence, with computed count, total and out-of-period dates. The variance prompt asks the model to describe those rows and frame timing or completeness as questions; citation and amount checks still cannot validate causal claims, so manager review remains required.
+
+The manager priorities briefing (`src/server/briefing.ts`) is a single structured-output request over facts computed in `src/server/operations.ts`. Code rejects any number, dollar amount, person name or link key absent from those facts, first-person wording, system field names and length overruns, with one bounded repair. The validated briefing is stored as an import-scoped agent-activity record keyed by a fingerprint of the facts, prompt version and model, so it is drafted once per review state and refreshed when that state changes. Concurrent requests share one draft, and the reset-generation guard rejects late writes. `GET /api/operations` and `POST /api/operations/briefing` are manager-only; accountants receive the non-comparative attention facts through `/api/workspace`.
+
 Record provider/model, prompt version, evidence versions, necessary tool activity, latency and returned usage. Keep secrets server-side and outside tracked files. Distinguish live output from fixtures in configuration, internal provenance and documentation; D020 removes fixture labels from the interface. A live-mode outage cannot silently become a successful canned response.
 
 ## Authentication and review permissions

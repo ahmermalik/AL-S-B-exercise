@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CaseDetail } from "../shared/types";
-import { AiOutputError, AiUnavailableError, draftSummary, isAiConfigured, reviseCaseWithAi, type ProposalInput, type ResponsesTransport } from "./llm";
+import { AiOutputError, AiUnavailableError, briefingIssue, draftBriefing, draftSummary, isAiConfigured, reviseCaseWithAi, type ProposalInput, type ResponsesTransport } from "./llm";
 
 type StubResponse = Awaited<ReturnType<ResponsesTransport["create"]>>;
 function response(text: string, output: StubResponse["output"] = []): StubResponse {
@@ -144,5 +144,49 @@ describe("package summary boundary", () => {
     const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValue(response(JSON.stringify({ summary: "Staff must verify the posting support before a correction is approved.", caseIds: [c.id] })));
     await expect(draftSummary([c], { transport: { create } })).resolves.toContain("posting support");
     expect(c).toEqual(before);
+  });
+});
+
+describe("priorities briefing boundary", () => {
+  const facts = { asOfBD: 6, ownerReportDueBD: 8, overdueSteps: { total: 36, byAccountantPortfolio: [{ accountant: "J. Ramirez", overdue: 31, overduePercent: 69, openPropertiesByOverdueSteps: [{ property: "The Grove at Kingwood", overdueSteps: 5 }] }] }, commentary: { awaitingAcceptedWording: 6, thresholdReviewsDue: { count: 9 } }, amountVerification: { pendingAmount: "$159,233.84" } };
+  const links = { commentary: "Variance commentary cases", "accountant:J. Ramirez": "J. Ramirez portfolio", "property:P104": "The Grove at Kingwood" };
+  const valid = { items: [
+    { text: "Confirm where commentary for the 6 Complete steps was written, or reopen them before BD8; the 9 steps due today need threshold confirmation only.", links: ["commentary"] },
+    { text: "Review recovery of 31 of 36 overdue steps with J. Ramirez, starting with The Grove at Kingwood (five steps).", links: ["accountant:J. Ramirez", "property:P104"] },
+  ] };
+  it("accepts a briefing whose numbers, people and links all come from the supplied facts", async () => {
+    expect(briefingIssue(valid, facts, links)).toBeNull();
+    const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValue(response(JSON.stringify(valid)));
+    const result = await draftBriefing(facts, links, { transport: { create } });
+    expect(result.items).toHaveLength(2); expect(create).toHaveBeenCalledTimes(1);
+    expect(String(create.mock.calls[0][0].instructions)).toContain("not a judgment about a person");
+  });
+  it.each([
+    [{ items: [{ text: "Recover 40 overdue steps first.", links: ["commentary"] }] }, "number 40"],
+    [{ items: [{ text: "Escalate to K. Patel today.", links: ["commentary"] }] }, "not a person"],
+    [{ items: [{ text: "Review the commentary cases.", links: ["stage:Payroll allocation"] }] }, "link keys"],
+    [{ items: [{ text: "Verify the $159K of flagged invoices.", links: ["commentary"] }] }, "exactly as supplied"],
+    [{ items: [{ text: "Verify $1,000,000 of flagged invoices.", links: ["commentary"] }] }, "not in the supplied facts"],
+    [{ items: [{ text: "I recommend reviewing commentary first.", links: ["commentary"] }] }, "first person"],
+    [{ items: [{ text: "Review cases in awaiting_evidence status.", links: ["commentary"] }] }, "system field"],
+  ])("rejects unsupported briefing content", (draft, message) => { expect(briefingIssue(draft, facts, links)).toContain(message); });
+  it("allows one repair, then refuses rather than show an unsupported briefing", async () => {
+    const bad = { items: [{ text: "Recover 40 overdue steps first.", links: ["commentary"] }] };
+    const repaired = vi.fn<ResponsesTransport["create"]>().mockResolvedValueOnce(response(JSON.stringify(bad))).mockResolvedValueOnce(response(JSON.stringify(valid)));
+    await expect(draftBriefing(facts, links, { transport: { create: repaired } })).resolves.toMatchObject({ items: valid.items });
+    expect(String(JSON.stringify(repaired.mock.calls[1][0].input))).toContain("number 40");
+    const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValue(response(JSON.stringify(bad)));
+    await expect(draftBriefing(facts, links, { transport: { create } })).rejects.toBeInstanceOf(AiOutputError);
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("variance drafting context", () => {
+  it("asks for invoice observations as questions rather than causes", async () => {
+    const c = { ...detail(), kind: "variance" as const };
+    const create = vi.fn<ResponsesTransport["create"]>().mockResolvedValueOnce(response("", [sourceCall()])).mockResolvedValueOnce(response(JSON.stringify(draft)));
+    await reviseCaseWithAi(c, { transport: { create }, baseline });
+    const content = String((create.mock.calls[0][0].input as { content?: string }[])[0].content);
+    expect(content).toContain("never state them as the cause");
   });
 });

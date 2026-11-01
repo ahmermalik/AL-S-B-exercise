@@ -41,10 +41,44 @@ export interface Run {
   /** When each stage began, recorded by the worker as the run progresses. */
   stageLog?: { name: string; at: string }[];
 }
+export type CommentaryReviewState = "missing" | "wording_accepted" | "resolved" | "dismissed";
+export interface CommentaryDiscrepancy {
+  propertyId: string; propertyName: string; accountant: string;
+  step: { status: string; dueBD: number; completedBD: number | null; source: SourceRef };
+  categories: { category: string; budgetCents: number; actualCents: number; caseId: string | null; review: CommentaryReviewState; source: SourceRef }[];
+}
+export interface ThresholdReview { propertyId: string; propertyName: string; accountant: string; dueBD: number; status: string; source: SourceRef }
+export interface AmountReview {
+  invoice: string; vendor: string; propertyId: string; propertyName: string; description: string; gl: string;
+  amountCents: number; invoiceDate: string; receivedDate: string; approval: string; codedBy: string; source: SourceRef;
+  peerCount: number; peerMedianCents: number; peerLowCents: number; peerHighCents: number; multiple: number;
+  owner: string; approvalCaseId: string | null; status: "outstanding";
+}
+export interface Attention {
+  /** Distinct active properties with open overdue steps or required commentary outstanding in review. */
+  followUp: { propertyIds: string[]; overdue: string[]; commentary: string[] };
+  commentary: { discrepancies: CommentaryDiscrepancy[]; awaitingWording: number; thresholdReviews: ThresholdReview[]; dateConflicts: string[] };
+  amounts: { reviews: AmountReview[]; totalCents: number; pendingCount: number; pendingCents: number; minPeers: number; robustDeviations: number };
+}
+export interface StageMatrix {
+  asOfBD: number;
+  stages: { name: string; dueBD: number; overdue: number; due: number }[];
+  rows: { accountant: string; properties: number; overdue: number; due: number; cells: { overdue: number; due: number }[] }[];
+  overdue: number; due: number;
+}
+export interface AiUsage { generated: number; approved: number; returned: number; pending: number; superseded: number }
+export interface BriefingItem { text: string; links: string[] }
+export interface Briefing { importId: string; fingerprint: string; items: BriefingItem[]; links: Record<string, string>; model: string; promptVersion: string; createdAt: string }
+export interface Operations {
+  matrix: StageMatrix; usage: AiUsage;
+  briefing: { current: Briefing | null; fingerprint: string; stale: boolean };
+  ai: { configured: boolean; model: string | null };
+}
 export interface Workspace {
   resetGeneration?: string;
   source: ImportSummary | null; properties: Property[]; cases: CaseSummary[]; run: Run | null;
   metrics: { activeProperties: number; lateProperties: number; commentaryGaps: number; openCases: number };
+  attention: Attention | null;
   ai: { configured: boolean; model: string | null };
 }
 export interface PackageSnapshot {

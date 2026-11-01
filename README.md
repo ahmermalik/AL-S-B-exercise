@@ -15,15 +15,19 @@ reviewing proposed corrections, and freezing a month-end review package.
 Use a normal window for the manager and a private window for the accountant.
 The review path is:
 
-1. Open **Prepare review**; the demo workbook is already loaded.
-2. Start preparation and open a property case.
-3. Request evidence as the manager; respond as the accountant.
-4. Review the proposal, execution evidence, and resolution gates.
-5. Save the frozen review package and export HTML or CSV.
+1. Open **Workspace**: the attention strip shows properties needing close
+   follow-up, commentary marked Complete without required explanations, and
+   invoices flagged for amount verification. Managers also see an AI priorities
+   briefing and an overdue-by-stage matrix; every count opens the related work.
+2. Open **Prepare review**; the demo workbook is already loaded.
+3. Start preparation and open a property case.
+4. Request evidence as the manager; respond as the accountant.
+5. Review the proposal, execution evidence, and resolution gates.
+6. Save the frozen review package and export HTML or CSV.
 
 This is a shared, resettable environment. Do not upload confidential data. The
-tracked demo workbook and its contents are public. Hosted AI drafting is
-currently disabled; deterministic checks and manual review work.
+tracked demo workbook and its contents are public. AI drafting runs when a
+provider is configured; deterministic checks and manual review work without it.
 
 ## Tech stack
 
@@ -50,6 +54,12 @@ currently disabled; deterministic checks and manual review work.
 - Deterministic accounting checks run before model interpretation.
 - The model can retrieve scoped evidence and draft wording; it cannot execute
   arbitrary SQL, post journal entries, approve payments, or send reports.
+- Variance cases include the property's invoices for that category, so drafts
+  describe what the AP register shows and frame timing or completeness as
+  questions rather than causes.
+- The manager-only priorities briefing is drafted from code-computed facts; any
+  number, person, amount, or link not in those facts is rejected. It is cached
+  per review state and refreshed when review state changes.
 - Cases use evidence/revision gates so stale requests or model responses cannot
   overwrite newer review work.
 - Saved packages are materialized snapshots; historical exports do not change

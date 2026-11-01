@@ -1,5 +1,5 @@
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
-import type { CaseDetail, Workspace, PackageDraft } from "../src/shared/types";
+import type { CaseDetail, Operations, Workspace, PackageDraft } from "../src/shared/types";
 const origin = "http://127.0.0.1:3101";
 async function login(page: Page, role: "manager" | "accountant") {
   await page.goto("/login"); await page.getByLabel("Email", { exact: true }).fill(`${role}@assetliving.com`);
@@ -26,6 +26,18 @@ test("import, staff support, manager approval, verified correction and frozen ha
   const ws: Workspace = await (await context.request.get(`${origin}/api/workspace`)).json();
   expect(ws.source?.counts).toMatchObject({ activeProperties: 38, invoices: 437, variances: 266, steps: 304 });
   const sunset = ws.cases.filter(c => c.propertyId === "P105"); expect(sunset).toHaveLength(4);
+  expect(ws.attention?.followUp.propertyIds).toHaveLength(18); expect(ws.attention?.commentary.awaitingWording).toBe(6);
+  expect(ws.attention?.amounts.reviews).toHaveLength(7); expect(ws.attention?.amounts.reviews.filter(r => !r.approvalCaseId)).toHaveLength(1);
+  const operations: Operations = await (await context.request.get(`${origin}/api/operations`)).json();
+  expect(operations.matrix.rows[0]).toMatchObject({ accountant: "J. Ramirez", overdue: 31, due: 45 }); expect(operations.ai.configured).toBe(false);
+  await page.goto("/?filter=late&accountant=J.%20Ramirez");
+  await expect(page.getByRole("button", { name: "Remove J. Ramirez filter", exact: true })).toBeVisible();
+  await expect(page.getByText("1–9 of 9", { exact: true })).toBeVisible();
+  await expect(page.getByText(/AI briefing is not configured/)).toBeVisible();
+  await page.getByRole("button", { name: /invoices flagged for amount verification/ }).click();
+  await expect(page.getByRole("dialog").getByText("Amount verification outstanding", { exact: true })).toHaveCount(7);
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  await page.goto("/cases?kind=variance"); await expect(page.getByText("6 open findings", { exact: true })).toBeVisible();
   const labor = sunset.find(c => c.kind === "duplicate" && c.title.includes("StaffBridge"))!;
   await page.goto(`/cases/${labor.id}`); await expect(page.getByRole("heading", { name: labor.title, exact: true })).toBeVisible();
   await expect(page.getByText(/B2 AP Invoices.*row/i)).toHaveCount(0);
@@ -40,7 +52,11 @@ test("import, staff support, manager approval, verified correction and frozen ha
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const staff = await browser.newContext({ baseURL: origin }); const staffPage = await staff.newPage();
   staffPage.on("pageerror", e => browserErrors.push(e.message));
-  await login(staffPage, "accountant"); await staffPage.goto(`/cases/${labor.id}`);
+  await login(staffPage, "accountant");
+  await expect(staffPage.getByText("properties need close follow-up", { exact: true })).toBeVisible();
+  await expect(staffPage.getByRole("heading", { name: "Priorities", exact: true })).toHaveCount(0);
+  expect((await staff.request.get(`${origin}/api/operations`)).status()).toBe(403);
+  await staffPage.goto(`/cases/${labor.id}`);
   await staffPage.getByRole("button", { name: "Add support", exact: true }).click();
   await staffPage.getByRole("button", { name: "Load support", exact: true }).click();
   await expect(staffPage.getByLabel("Source transaction ID", { exact: true })).toHaveValue("SR-LAB-02");

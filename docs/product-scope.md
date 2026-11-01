@@ -110,6 +110,21 @@ The selected [Review package walkthrough](screens/review-package.md) continues w
 
 Budget or forecast review requests, broad document ingestion, enterprise SSO/user administration, and real accounting-system integrations remain extensions. Two private authenticated demo accounts with server-enforced manager/accountant permissions are in the selected implementation baseline. Actual posting, payment release/holds, recovery, and owner-report delivery remain outside this prototype. Approval routing or period treatment beyond the two supplied policies must remain an explicit simulated assumption until confirmed.
 
+## Manager operating view
+
+Added November 1, 2026 under D030. The Workspace opens with an attention strip computed from the workbook and current review state:
+
+| Item | Definition |
+| --- | --- |
+| Properties needing close follow-up | Distinct active properties with overdue tracker steps whose close case is open, or a required variance commentary whose case is open. It does not predict which owner reports will be late. |
+| Commentary marked Complete without required explanations | Properties whose tracker reports Variance commentary Complete while a category over the 10% policy threshold has no commentary in the workbook. Accepted wording reduces the count; the imported tracker is not rewritten. |
+| Threshold reviews | Commentary steps due by the snapshot at properties with no category over the threshold. They need a confirmed review, not new commentary, and never close automatically. |
+| Invoices flagged for amount verification | Invoices with a robust z-score above 5 against at least 8 other invoices sharing a description. Verification stays outstanding; the app records no payment hold, and Regional approval evidence remains a separate review. |
+
+Managers also see an overdue-by-stage matrix (accountant by stage, tracker as of BD6) and a short AI priorities briefing whose numbers, people, amounts and links must come from the computed facts. Every strip item, matrix count and briefing link opens filtered properties, cases or the flagged-invoice list. A usage line counts AI case drafts as generated, approved directly, returned, pending review or superseded; these are workspace counts, not evidence of repeated production use.
+
+Variance cases include the property's AP rows for the category. Drafts describe their count, total and any out-of-period dates and ask the responsible accountant to confirm timing or completeness; they do not establish the cause.
+
 ## Success measures
 
 Measure preparation and review time, factual accuracy, useful findings versus false positives, commentary acceptance and rework, unresolved evidence, and exceptions resolved before deadline. After a real pilot, measure repeat use and close timeliness. Record model cost and latency. The synthetic workbook provides no measured labor-saving baseline or evidence of achieved customer retention or financial savings.

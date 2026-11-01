@@ -2,10 +2,11 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, lstatSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
-import type { CaseAction, CaseDetail, CaseSummary, ImportSummary, PackageDraft, PackageSnapshot, Proposal, Role, Run, SupportInput, Workspace } from "../shared/types";
+import type { Briefing, BriefingItem, CaseAction, CaseDetail, CaseSummary, ImportSummary, PackageDraft, PackageSnapshot, Proposal, Role, Run, SupportInput, Workspace } from "../shared/types";
 import { installResetGuards, sqlite } from "./db";
 import { DomainError, parseWorkbook, type ParsedWorkbook } from "./import";
 import { buildRuleProposal, codingCategories, executionTemplate, findCases, history, invoiceIdentityIssue, needsAccountingTreatmentReview, sourceInvoiceReference, supportOf, type ProposalInput } from "./domain";
+import { computeAttention } from "./operations";
 export { DomainError, buildRuleProposal };
 export type Actor = {id: string; name: string; role: Role};
 export type RunPatch = Partial<Pick<Run, "stage" | "progress" | "status" | "error" | "completedCases" | "totalCases">>;
@@ -178,7 +179,23 @@ export function getWorkspace(): Workspace {
   const properties = source?.properties.map(p => ({...p, caseCount: all.filter(c => c.propertyId === p.id && !closed.has(c.status)).length})) || [];
   return {resetGeneration: getResetGeneration(), source: source?.summary || null, properties, cases: all.map(summaryOf), run: source ? getRunForImport(source.summary.id) : null,
     metrics: {activeProperties: properties.filter(p => p.active).length, lateProperties: properties.filter(p => p.active && p.lateCount).length, commentaryGaps: properties.filter(p => p.active).reduce((n, p) => n + p.commentaryGaps, 0), openCases: all.filter(c => !closed.has(c.status)).length},
+    attention: source ? computeAttention(source, all) : null,
     ai: {configured: !!process.env.OPENAI_API_KEY && !!process.env.OPENAI_MODEL, model: process.env.OPENAI_MODEL || null}};
+}
+/** Active import and its cases, for derived operational views. */
+export function operationsSource(): {parsed: ParsedWorkbook; cases: CaseDetail[]} {
+  const parsed = activeImport();
+  if (!parsed) throw new DomainError(404, "Import a close workbook first.");
+  return {parsed, cases: listCases(parsed.summary.id)};
+}
+export function latestBriefing(importId: string): Briefing | null {
+  const record = json<Record<string, unknown>>(sqlite.prepare("SELECT data FROM close_agent_activity WHERE case_id IS NULL AND run_id IS NULL AND json_extract(data,'$.event')='priorities_briefing' AND json_extract(data,'$.importId')=? ORDER BY created_at DESC, rowid DESC LIMIT 1").get(importId));
+  if (!record || !Array.isArray(record.items)) return null;
+  return {importId, fingerprint: String(record.fingerprint), items: record.items as BriefingItem[], links: (record.links || {}) as Record<string, string>, model: String(record.model), promptVersion: String(record.promptVersion), createdAt: String(record.createdAt)};
+}
+/** Persists a validated briefing; returns false when the workspace was reset or the import changed meanwhile. */
+export function saveBriefing(briefing: Omit<Briefing, "createdAt">, generation: string): boolean {
+  return recordAgentActivity({event: "priorities_briefing", importId: briefing.importId, resetGeneration: generation, fingerprint: briefing.fingerprint, items: briefing.items, links: briefing.links, model: briefing.model, promptVersion: briefing.promptVersion});
 }
 function summaryOf(c: CaseDetail): CaseSummary {
   return {id: c.id, importId: c.importId, propertyId: c.propertyId, propertyName: c.propertyName, kind: c.kind, title: c.title, amountCents: c.amountCents, status: c.status, revision: c.revision, evidenceVersion: c.evidenceVersion, nextAction: c.nextAction, owner: c.owner};

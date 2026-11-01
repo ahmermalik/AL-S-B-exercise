@@ -22,6 +22,19 @@ function initialCase(parsed: ParsedWorkbook, key: string, propertyId: string, ki
 function originalEvidence(label: string, data: Record<string, unknown>, source: Evidence["source"]): Evidence {
   return {id: `SRC-${createHash("sha256").update(label + JSON.stringify(source)).digest("hex").slice(0, 12)}`, label, kind: "workbook", author: "Original workbook", text: JSON.stringify(data, null, 2), data, source, version: 0, createdAt: new Date().toISOString()};
 }
+const months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+/** "September 2026" → "2026-09", matching ISO invoice dates. */
+function periodPrefix(period: string) {
+  const [month, year] = period.trim().toLowerCase().split(/\s+/), index = months.indexOf(month);
+  return index >= 0 && /^\d{4}$/.test(year || "") ? `${year}-${String(index + 1).padStart(2, "0")}` : null;
+}
+function relatedInvoiceSentence(c: CaseDetail) {
+  const count = c.facts.relatedInvoiceCount;
+  if (typeof count !== "number") return "";
+  if (!count) return ` The AP register lists no invoices coded to ${c.facts.category} for this property.`;
+  const outside = (c.facts.relatedInvoicesOutsidePeriod as unknown[] | undefined)?.length || 0;
+  return ` The AP register lists ${count} invoice${count === 1 ? "" : "s"} coded to ${c.facts.category} for this property, totaling ${money(Number(c.facts.relatedInvoiceTotalCents))}${outside ? `; ${outside} ${outside === 1 ? "is" : "are"} dated outside ${c.facts.relatedInvoicePeriod}` : ""}.`;
+}
 export function codingAccount(invoice: Invoice) {
   const text = `${invoice.vendor} ${invoice.description}`.toLowerCase();
   if (/grounds maintenance|landscap/.test(text)) return "6210";
@@ -51,10 +64,17 @@ export function findCases(parsed: ParsedWorkbook): CaseDetail[] {
       result.push(initialCase(parsed, `coding:${invoice.source.row}`, invoice.propertyId, "coding", `${invoice.vendor} · coding review`, invoice.amountCents, {invoice, expectedGL, expectedAccount: account.name, expectedCategory: account.category, currentGL: invoice.gl, currentAccount: currentAccount.name, currentCategory: currentAccount.category, amountMeaning: "Accounting classification under review; not savings."}, [originalEvidence(invoice.invoice, invoice as unknown as Record<string, unknown>, invoice.source), originalEvidence("Chart of accounts", {currentAccount, suggestedAccount: account}, account.source)]));
     }
   }
+  const categoryOf = new Map(parsed.accounts.map(a => [a.code, a.category] as const)), period = periodPrefix(parsed.summary.period);
   for (const variance of parsed.variances) if (exceedsCommentaryThreshold(variance.budgetCents, variance.actualCents) && !variance.commentary) {
     const property = parsed.properties.find(p => p.id === variance.propertyId)!;
     const tracker = property.steps.find(s => s.name.toLowerCase().includes("variance"));
-    result.push(initialCase(parsed, `variance:${variance.source.row}`, variance.propertyId, "variance", `${variance.category} · commentary required`, Math.abs(variance.actualCents - variance.budgetCents), {...variance, deltaCents: variance.actualCents - variance.budgetCents, trackerStatus: tracker?.status || "Unknown", amountMeaning: "Budget variance; not a proposed correction."}, [originalEvidence("Budget versus actual", variance as unknown as Record<string, unknown>, variance.source), ...(tracker ? [originalEvidence("Variance close step", tracker as unknown as Record<string, unknown>, tracker.source)] : [])]));
+    const related = parsed.invoices.filter(i => i.propertyId === variance.propertyId && categoryOf.get(i.gl) === variance.category);
+    const relatedTotal = related.reduce((n, i) => n + i.amountCents, 0);
+    result.push(initialCase(parsed, `variance:${variance.source.row}`, variance.propertyId, "variance", `${variance.category} · commentary required`, Math.abs(variance.actualCents - variance.budgetCents), {...variance, deltaCents: variance.actualCents - variance.budgetCents, trackerStatus: tracker?.status || "Unknown", amountMeaning: "Budget variance; not a proposed correction.",
+      relatedInvoiceCount: related.length, relatedInvoiceTotalCents: relatedTotal, actualLessRelatedInvoicesCents: variance.actualCents - relatedTotal, relatedInvoicePeriod: parsed.summary.period,
+      relatedInvoicesOutsidePeriod: related.filter(i => period && !i.invoiceDate.startsWith(period)).map(i => ({invoice: i.invoice, vendor: i.vendor, invoiceDate: i.invoiceDate, amountCents: i.amountCents, row: i.source.row})),
+      relatedInvoiceScope: `AP register rows for this property coded to ${variance.category} accounts. The register is not established as the full ledger, so these rows are context rather than the cause.`},
+    [originalEvidence("Budget versus actual", variance as unknown as Record<string, unknown>, variance.source), ...(tracker ? [originalEvidence("Variance close step", tracker as unknown as Record<string, unknown>, tracker.source)] : []), ...related.map(i => originalEvidence(`${i.invoice} · ${i.vendor}`, i as unknown as Record<string, unknown>, i.source))]));
   }
   for (const property of parsed.properties) {
     const high = parsed.invoices.filter(i => i.propertyId === property.id && requiresRegionalApproval(i.amountCents));
@@ -102,7 +122,7 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     const budget = Number(c.facts.budgetCents), actual = Number(c.facts.actualCents), delta = actual - budget;
     const percent = budget ? `${(Math.abs(delta) / Math.abs(budget) * 100).toFixed(1)}%` : "an undefined percentage on zero budget";
     p.route = "Commentary review";
-    p.summary = `${c.facts.category} actual is ${money(actual)} against ${money(budget)} budget, ${money(Math.abs(delta))} ${delta >= 0 ? "unfavorable" : "favorable"} (${percent}). ${s?.explanation ? `The staff explanation attributes the variance as follows: ${s.explanation}` : "The supplied records do not establish the cause."}`;
+    p.summary = `${c.facts.category} actual is ${money(actual)} against ${money(budget)} budget, ${money(Math.abs(delta))} ${delta >= 0 ? "unfavorable" : "favorable"} (${percent}).${relatedInvoiceSentence(c)} ${s?.explanation ? `The staff explanation attributes the variance as follows: ${s.explanation}` : "The supplied records do not establish the cause."}`;
     p.rationale = "Commentary is required for a category strictly more than 10% off budget. The AP register is not established as the full ledger.";
     if (!s?.explanation) missing.push("Request an attributable explanation and supporting ledger detail");
     if (!s?.ledgerRecord) missing.push("Underlying ledger support remains outstanding");
