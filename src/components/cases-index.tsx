@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { accountingCopy } from "@/lib/accounting-copy";
 import { ArrowRight, ArrowUpRight, X } from "lucide-react";
 import { motion } from "framer-motion";
 import type { CaseSummary, Workspace } from "@/shared/types";
@@ -44,10 +45,10 @@ export function CasesScreen({ kind: initialKind, property: initialProperty }: { 
           <td><span className="mobile-cell-label">Property</span>{item.propertyName}<span className="sub">{item.propertyId}</span></td>
           <td className="text-right mono"><span className="mobile-cell-label">Amount</span>{item.kind === "close" && !item.amountCents ? "—" : money(item.amountCents)}</td>
           <td><span className="mobile-cell-label">Status</span><Status value={item.status} /></td>
-          <td><span className="mobile-cell-label">Next action</span>{item.nextAction}<span className="sub">{item.owner}</span></td>
+          <td><span className="mobile-cell-label">Next action</span>{accountingCopy(item.nextAction)}<span className="sub">{item.owner}</span></td>
           <td className="text-right"><ArrowUpRight size={16} className="row-arrow" aria-hidden="true" /></td>
         </tr>)}</motion.tbody></table></div>
-        : <Empty title={tab === "open" ? "No open findings" : "Nothing here yet"}>{data.cases.length ? <p className="muted">Switch tabs to see other findings.</p> : <Button asChild><Link href="/prepare">Prepare review<ArrowRight size={16} /></Link></Button>}</Empty>}
+        : <Empty title={tab === "open" ? "No open findings" : "Nothing here yet"}>{data.cases.length ? <p className="muted">Switch tabs to see other findings.</p> : <Button asChild><Link href="/prepare">Preparation<ArrowRight size={16} /></Link></Button>}</Empty>}
     </section>
   </>;
 }

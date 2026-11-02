@@ -12,7 +12,7 @@ The [domain research](../research/property-management-close.md) established the 
 
 ## Layout
 
-1. Application navigation: Workspace, Prepare review, Review package; identify the manager role.
+1. Application navigation: Workspace, Preparation, Case review, Review package; identify the manager role.
 2. Close context: September 2026, scenario BD6, owner-report deadline BD8, selected snapshot.
 3. Compact portfolio summary: 38 properties, 14 with overdue source-reported steps, and six material commentary gaps. These are source-derived counts, not an AI readiness score.
 4. Property progress table: each property has eight step statuses, its accountant, reported completion count, and a next action or follow-up. All 38 tracker properties are included, with six rows per page.
@@ -49,7 +49,7 @@ Reported completion counts include the source's Complete records, even where dat
 | Source records | Read the original B4 row and relevant B2/B3 records without changing them. |
 | Inspect evidence and limits | Understand the handoff's support and which causes/documents remain unavailable. |
 | Data and preparation details | Inspect scope, missing sources, date discrepancies, and preparation limitations. |
-| Prepare review | Navigate to screen 2 to import/select a workbook and start a new preparation version. |
+| Preparation | Navigate to screen 2 to import/select a workbook and start a new preparation version. |
 | Review package | Navigate to screen 4 to inspect reviewed results and unresolved items before export. |
 
 Approval, external messages, and financial changes do not happen on this landing page. No Approve all, AI confidence score, or unsupported owner-ready percentage is proposed.
@@ -76,4 +76,4 @@ Detailed bank/AR/payroll support and a complete ledger are unavailable. No issue
 
 ## Review checkpoint
 
-The hierarchy, property selection, stage meanings, and prepared handoff were accepted for the conceptual Screen 1 view. Continue with the [Prepare review walkthrough](prepare-review.md). Accepted hosting and operating-model decisions remain in the decision log.
+The hierarchy, property selection, stage meanings, and prepared handoff were accepted for the conceptual Screen 1 view. Continue with the [Preparation walkthrough](prepare-review.md). Accepted hosting and operating-model decisions remain in the decision log.

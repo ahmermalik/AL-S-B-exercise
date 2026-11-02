@@ -19,7 +19,7 @@ The review path is:
    follow-up, commentary marked Complete without required explanations, and
    invoices flagged for amount verification. Managers also see an AI priorities
    briefing and an overdue-by-stage matrix; every count opens the related work.
-2. Open **Prepare review**; the demo workbook is already loaded.
+2. Open **Preparation**; the demo workbook is already loaded.
 3. Start preparation and open a property case.
 4. Request evidence as the manager; respond as the accountant.
 5. Review the proposal, execution evidence, and resolution gates.
@@ -82,7 +82,7 @@ Open http://127.0.0.1:3000 and use the demo credentials above.
 
 - The tracked `seed/close-pack.xlsx` loads automatically into an empty database;
   preparation still starts only when a user clicks **Start preparation**.
-- A user can upload a different workbook through **Prepare review**. Resetting
+- A user can upload a different workbook through **Preparation**. Resetting
   the walkthrough restores the original demo workbook without starting a run.
 - Set `OPENAI_API_KEY` in `.env.local` to enable live drafting.
 - Keep an existing `.env.local` when restarting; setup preserves existing

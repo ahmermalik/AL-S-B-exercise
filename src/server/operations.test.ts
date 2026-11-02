@@ -75,7 +75,7 @@ describe("variance cases grounded in related workbook invoices", () => {
     expect(c.facts.relatedInvoicesOutsidePeriod).toEqual([expect.objectContaining({ invoice: "INV-89429", invoiceDate: "2026-08-16", row: 389 })]);
     expect(c.evidence.some(e => e.source?.row === 389)).toBe(true);
     expect(buildRuleProposal(c).summary).toContain("1 is dated outside September 2026");
-    expect(buildRuleProposal(c).summary).toContain("do not establish the cause");
+    expect(buildRuleProposal(c).summary).toContain("do not explain why the amount differs from budget");
   });
   it("states plainly when no invoices are coded to the category", () => {
     const c = variance("P107");

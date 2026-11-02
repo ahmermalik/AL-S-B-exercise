@@ -16,10 +16,11 @@ async function action(context: BrowserContext, id: string, input: Record<string,
 }
 
 test("import, staff support, manager approval, verified correction and frozen handoff", async ({ browser, page, context }) => {
+  test.setTimeout(120_000);
   const browserErrors: string[] = []; page.on("pageerror", e => browserErrors.push(e.message));
   await login(page, "manager");
-  await page.getByRole("link", { name: "Prepare review", exact: true }).first().click();
-  await expect(page.getByRole("heading", { name: "Prepare review", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Preparation", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "Preparation", level: 1, exact: true })).toBeVisible();
   await expect(page.getByText("437", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Preparation receipt", exact: true })).toHaveCount(0);
   expect((await (await context.request.get(`${origin}/api/preparation`)).json()).receipt).toBeNull();
@@ -55,7 +56,7 @@ test("import, staff support, manager approval, verified correction and frozen ha
   await expect(aiActivity.locator(".usage-part").first()).toBeVisible();
   await aiActivity.locator("summary").click();
   await expect(aiActivity.locator(".usage-part").first()).toBeHidden();
-  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Prepare review", exact: true }).click();
+  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Preparation", exact: true }).click();
   await expect(receipt).toBeVisible();
   await page.getByRole("link", { name: "Open available findings", exact: true }).click();
   await page.locator(".matrix-table").getByRole("button", { name: "J. Ramirez", exact: true }).click();
@@ -100,6 +101,21 @@ test("import, staff support, manager approval, verified correction and frozen ha
   await page.getByRole("button", { name: "Inspect record", exact: true }).first().click();
   await expect(page.getByRole("dialog")).toContainText(/B2 AP Invoices.*row/i);
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  expect(await page.locator(".case-review-layout > section > .panel-head h2").allTextContents()).toEqual(["1. Finding & recommendation", "2. Supporting records", "3. Next action"]);
+  await expect(page.locator(".proposal-summary")).toContainText("might represent the same invoice");
+  await expect(page.getByRole("heading", { name: "Ask the accountant for the missing records", exact: true })).toBeVisible();
+  await page.screenshot({ path: "data/qa-case-reading-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("status", { name: "Opening Close review", exact: true })).toHaveCount(0);
+  expect((await page.locator(".case-head > .grow").boundingBox())!.width).toBeGreaterThan(300);
+  await page.screenshot({ path: "data/qa-case-reading-phone.png", fullPage: true, animations: "disabled" });
+  await page.getByRole("button", { name: "Use dark appearance", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-appearance", "dark");
+  await page.screenshot({ path: "data/qa-case-reading-phone-dark.png", fullPage: true, animations: "disabled" });
+  await page.getByRole("button", { name: "Use light appearance", exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 1000 });
   const initial = await readCase(context, labor.id);
   const unsupported = await action(context, labor.id, { action: "approve", expectedRevision: initial.revision, proposalId: initial.proposals.at(-1)!.id });
   expect(unsupported.status()).toBe(409);

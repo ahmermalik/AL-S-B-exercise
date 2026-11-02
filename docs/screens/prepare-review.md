@@ -1,6 +1,6 @@
-# Prepare review design walkthrough
+# Preparation design walkthrough
 
-Updated October 31, 2026. Prepare review is implemented with workbook intake, durable SQLite run state, a separate preparation worker and partial-drafting recovery. The accepted conceptual design below is retained as the behavior contract, not a claim that every historical preview state was rendered in the current app. See the [local runbook](../local-runbook.md).
+Updated October 31, 2026. Preparation is implemented with workbook intake, durable SQLite run state, a separate preparation worker and partial-drafting recovery. The accepted conceptual design below is retained as the behavior contract, not a claim that every historical preview state was rendered in the current app. See the [local runbook](../local-runbook.md).
 
 Current source preparation yields 67 findings. The earlier isolated Linux check completed 51 rule-only preparations while drafting was partial; the later full live run completed all work. OpenAI account/model access and selected live application Case review/package-summary calls now passed. The full worker run is verified: Submitted, 67/67 complete, no run error, with 16 live semantic drafts and 51 rule-only preparations. Core/native/browser and local container login/worker/restart-persistence checks passed. Azure is not deployed.
 

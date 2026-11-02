@@ -2,7 +2,7 @@
 
 Updated November 1, 2026. The original pre-build plan below is retained as the implementation contract. Under D022, the connected application was implemented; D029 records the later DigitalOcean reviewer deployment. All four screens, authenticated manager/accountant roles, SQLite preparation jobs, source-linked case review, and frozen reports are live at `asset-living-demo.foresyte.xyz`. Startup and the current workflow are in the [local runbook](local-runbook.md); production operations are in the [deployment runbook](../infra/deploy/README.md).
 
-Local follow-up under D032, November 1: saving changed support now prepares a current rules proposal atomically, AI draft counters are collapsed, and Prepare review displays a persistent current-workbook receipt. Prior proposal versions, approval boundaries, execution checks and immutable packages remain in place. The unposted-invoice ledger-form requirement is documented as a known limitation. These changes are verified locally and have not been deployed to the hosted demo.
+Local follow-up under D032, November 1: saving changed support now prepares a current rules proposal atomically, AI draft counters are collapsed, and Preparation displays a persistent current-workbook receipt. Prior proposal versions, approval boundaries, execution checks and immutable packages remain in place. The unposted-invoice ledger-form requirement is documented as a known limitation. These changes were deployed in commit 0bf41ee; the GitHub build and deployment completed successfully.
 
 Verification for D032: TypeScript, ESLint, all 88 unit tests, both isolated browser workflows and an isolated production build passed. Browser coverage includes receipt absence before preparation, partial drafting, receipt persistence after reload/navigation, phone width, keyboard disclosure, automatic support preparation, one-click proposal comparison, manager/accountant permissions, correction verification, resets and frozen exports. Desktop and phone receipt captures were visually inspected. Verification used separate temporary source/dependency copies and owned databases; the running application and its database were preserved. The production build's temporary database needed serial WAL initialization before parallel page collection. No live provider call or hosted reset was required for this change.
 
@@ -80,13 +80,13 @@ Suggested persistent groups: auth/session records; imports/source records; prope
 
 - Property-by-eight-step close view using B4 source-reported statuses, responsible accountants, due business days and property scope.
 - Case counts and specific blockers/evidence conflicts; select a property/step to inspect the relevant issues and enter Case review.
-- Prepare review and Review package actions keep the selected period/snapshot context.
+- Preparation and Review package actions keep the selected period/snapshot context.
 - A short contextual handoff may summarize supported blockers. No AI health score, invented dependencies or certification of a bank/AR reconciliation.
 - Apply ui-craft: one header for period/source, a compact property table, and selected-property details. Keep technical preparation logs out of the main workspace.
 
 **Done when:** all active properties can be reached; Late, Due today, Not due and reported Complete remain distinct; conflicting completion evidence is visible without rewriting B4; selecting a case opens the correct property/period/version context.
 
-### 2. Prepare review
+### 2. Preparation
 
 **Task:** import the pack and run preparation with honest progress and recovery.
 
@@ -184,3 +184,13 @@ The original planning-only boundary was superseded by D022 for implementation an
 ## References
 
 The [architecture](architecture.md) records primary technical sources and storage/provider details. The [UI rules](ui-guidelines.md) govern the visual implementation. The [screen map](screens-and-workflow.md) and screen walkthroughs retain domain behavior; newer UI rules supersede redundant historical preview copy.
+
+## November 2 case reading order and accounting language
+
+Case review now presents the finding and recommendation, supporting records, and next action in that order in the DOM and at desktop/phone widths. The next action is specific to the signed-in role and review stage. Approval blockers are explained directly; technical review requirements remain accessible in a disclosure. The phone case header gives the finding its own row.
+
+AGENTS.md and the UI guidelines apply the plain accounting language standard to all product writing, including AI prompts and reports. Rule-generated explanations now use shorter accounting language, and existing pending rule drafts display exact plain-language equivalents without changing saved review history. AI case and package-summary prompt versions were updated; case drafts request at most two summary sentences and three rationale sentences, with uncertainty and next actions preserved. Existing AI drafts require a new revision to use the new instructions.
+
+All 88 unit tests, TypeScript and ESLint passed. The isolated full browser suite passed before the phone-header adjustment; the affected workflow was rerun for the phone adjustment and light/dark captures. Live evaluation run-4UD47G passed all three mechanical accounting checks, and its three summaries/rationales were read for plain language. It retained missing-evidence stops, the supported grounds reclassification and the capitalization-policy requirement. This is a bounded evaluation, not a guarantee of every future model response.
+
+The final isolated production build also passed compilation, TypeScript, page generation and optimization. The existing metadataBase warning remains unrelated to this change.

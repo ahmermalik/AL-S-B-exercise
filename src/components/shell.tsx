@@ -15,7 +15,7 @@ export type User = { id: string; name: string; email: string; role: Role };
 const UserContext = createContext<User | null>(null);
 const navItems = [
   { href: "/", label: "Workspace", short: "Workspace", Icon: LayoutDashboard, active: (p: string) => p === "/" },
-  { href: "/prepare", label: "Prepare review", short: "Prepare", Icon: ListChecks, active: (p: string) => p === "/prepare" },
+  { href: "/prepare", label: "Preparation", short: "Prepare", Icon: ListChecks, active: (p: string) => p === "/prepare" },
   { href: "/cases", label: "Case review", short: "Cases", Icon: Files, active: (p: string) => p.startsWith("/cases") },
   { href: "/packages", label: "Review package", short: "Package", Icon: ClipboardCheck, active: (p: string) => p === "/packages" },
 ];

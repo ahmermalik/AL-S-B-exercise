@@ -9,7 +9,7 @@ import { money } from "@/lib/ui";
 import { ease, spring } from "./motion";
 
 /* ---------- Provenance ---------- */
-export const originLabel = (origin: Proposal["origin"]) => origin === "ai" ? "AI draft" : origin === "manager" ? "Manager edit" : "Prepared from rules";
+export const originLabel = (origin: Proposal["origin"]) => origin === "ai" ? "AI draft" : origin === "manager" ? "Manager edit" : "Prepared by application";
 export function OriginChip({ origin }: { origin: Proposal["origin"] }) {
   const Icon = origin === "ai" ? Sparkles : origin === "manager" ? PenLine : Cog;
   return <span className="origin-chip" data-origin={origin}><Icon size={12} aria-hidden="true" />{originLabel(origin)}</span>;

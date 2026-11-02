@@ -59,7 +59,7 @@ function PrepareContent() {
   }
   const elapsed = run ? duration((active ? now : Date.parse(run.updatedAt)) - Date.parse(run.createdAt)) : "";
   const zoneLabel = upload === "dragover" ? "Drop to import" : upload === "uploading" ? "Importing workbook…" : upload === "imported" ? "Workbook imported" : source ? source.filename : "Drop a close workbook here";
-  return <><BackLink /><motion.header className="page-head" variants={fadeUp} initial="hidden" animate="show"><div><div className="eyebrow">{source?.period || "Month-end close"}</div><h1>Prepare review</h1>{run && <p>Last run {dateTime(run.createdAt)} · {elapsed}</p>}</div></motion.header>
+  return <><BackLink /><motion.header className="page-head" variants={fadeUp} initial="hidden" animate="show"><div><div className="eyebrow">{source?.period || "Month-end close"}</div><h1>Preparation</h1>{run && <p>Last run {dateTime(run.createdAt)} · {elapsed}</p>}</div></motion.header>
     {error && <div className="section-gap"><Notice>{error}</Notice></div>}
     <div className="two-column section-gap prepare-layout"><div className="stack">
       <section className="panel panel--source"><div className="panel-head"><h2>Source workbook</h2></div><div className="panel-body">

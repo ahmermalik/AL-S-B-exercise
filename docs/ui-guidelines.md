@@ -49,7 +49,7 @@ This is the implementation standard. Copy cleanup alone is not evidence that per
 | Information | Visible owner |
 | --- | --- |
 | Property close progress and blockers | Close workspace. |
-| Import scope and preparation progress | Prepare review. |
+| Import scope and preparation progress | Preparation. |
 | Evidence, proposed treatment and the next case action | Case review. |
 | Reviewed outcomes and outstanding handoff work | Review package. |
 | Original workbook rows and supplemental support | Case/source detail. |
@@ -76,3 +76,11 @@ Do not add chat, AI-persona narration, a confidence score, or a technical tool l
 Apply the rules while implementing each screen rather than waiting for a final cosmetic pass. Inspect complete rendered states with realistic records and long content. Meaningful workflow checks must still pass after copy and layout changes. Keep evidence tied to the exact screen/state reviewed; do not describe a bounded Screen 4 cleanup as a completed four-screen visual audit.
 
 Brand-pass verification, October 31, 2026: inspected all four screens at desktop and 390px phone widths in light and dark appearance, the accountant support dialog, manager request dialog, package reading view and keyboard focus return. Phone document width remained 390px on all four screens. Local captures are under `data/qa/brand/`. TypeScript, ESLint, 42 unit tests and the Linux image build passed; the runtime includes the official logo asset. This pass exercised view/control behavior without saving case decisions or running another preparation. The earlier full financial browser workflow is separate verification. Concurrent animation edits were preserved, and a missing shell animation import was corrected.
+
+## Plain accounting language
+
+Applies to every visible label, message, rule-generated explanation, AI-generated analysis, briefing, summary and report. Lead with the accounting finding, state what remains unknown, and give a specific next action. Use short sentences, concrete verbs and familiar accounting terms. Preserve distinctions between a possible error, approved correction, actual execution and confirmed resolution.
+
+Prefer “These records might represent the same invoice. The application needs posting and payment evidence before recommending a correction.” Avoid “Matching invoice identifiers identify a candidate.” Say “Supporting ledger records are still needed” instead of “ledger support remains outstanding.” Retain useful accounting terms; put system versions and diagnostics in secondary details.
+
+Case review reads left to right, and top to bottom on phones: finding and recommendation, supporting records, next action. Keep the primary action visible for the current role and explain any blocked approval in plain language. AI instructions must follow this standard while retaining source checks, uncertainty and accounting authority rules. Reviewed historical wording remains preserved.

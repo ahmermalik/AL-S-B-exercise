@@ -122,15 +122,15 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     const budget = Number(c.facts.budgetCents), actual = Number(c.facts.actualCents), delta = actual - budget;
     const percent = budget ? `${(Math.abs(delta) / Math.abs(budget) * 100).toFixed(1)}%` : "an undefined percentage on zero budget";
     p.route = "Commentary review";
-    p.summary = `${c.facts.category} actual is ${money(actual)} against ${money(budget)} budget, ${money(Math.abs(delta))} ${delta >= 0 ? "unfavorable" : "favorable"} (${percent}).${relatedInvoiceSentence(c)} ${s?.explanation ? `The staff explanation attributes the variance as follows: ${s.explanation}` : "The supplied records do not establish the cause."}`;
-    p.rationale = "Commentary is required for a category strictly more than 10% off budget. The AP register is not established as the full ledger.";
+    p.summary = `${c.facts.category} actual is ${money(actual)} against ${money(budget)} budget, ${money(Math.abs(delta))} ${delta >= 0 ? "unfavorable" : "favorable"} (${percent}).${relatedInvoiceSentence(c)} ${s?.explanation ? `The staff explanation attributes the variance as follows: ${s.explanation}` : "The available records do not explain why the amount differs from budget."}`;
+    p.rationale = "An explanation is required when a category differs from budget by more than 10%. The invoice list may not include everything recorded in the ledger.";
     if (!s?.explanation) missing.push("Request an attributable explanation and supporting ledger detail");
     if (!s?.ledgerRecord) missing.push("Underlying ledger support remains outstanding");
     return p;
   }
   if (c.kind === "approval") {
-    p.summary = `${(c.facts.invoices as Invoice[]).length} invoices exceed $10,000. Their generic approval statuses do not establish Regional Manager sign-off or payment status.`;
-    p.rationale = "The policy applies before payment; missing evidence is not a proven payment-policy violation.";
+    p.summary = `${(c.facts.invoices as Invoice[]).length} invoices exceed $10,000. The workbook does not show who approved them or whether they were paid.`;
+    p.rationale = "Check that the Regional Manager approved each invoice before payment. Missing approval records do not prove that approval was skipped.";
     const invoices = c.facts.invoices as Invoice[], records = s?.approvalRecords || [];
     for (const invoice of invoices) {
       const record = records.find(r => r.invoiceRow === invoice.source.row);
@@ -140,8 +140,8 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     return p;
   }
   if (c.kind === "close") {
-    p.summary = c.facts.offboarded ? "Invoices reference an offboarded property. Verify service period and owner responsibility before rejecting any liability." : "The source tracker reports overdue steps or completion after the BD6 snapshot. Confirm the outstanding work and correct source status with the responsible accountant.";
-    p.rationale = "Reported completion is not independent verification and a source discrepancy does not authorize a ledger entry.";
+    p.summary = c.facts.offboarded ? "These invoices belong to a property we no longer manage. Check when the services were provided and who is responsible for payment." : "The close tracker shows overdue work or completion dates after business day 6. Ask the accountant to confirm what is complete and provide supporting workpapers.";
+    p.rationale = "Check the supporting work before confirming completion. A tracker discrepancy alone does not justify a journal entry.";
     const affected = [...((c.facts.lateSteps as {name: string}[]) || []), ...((c.facts.conflictingSteps as {name: string}[]) || [])];
     if (c.facts.offboarded) missing.push("Confirm service-period and owner-responsibility support");
     else for (const step of [...new Map(affected.map(step => [step.name, step])).values()]) {
@@ -154,7 +154,7 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
   if (needsAccountingTreatmentReview(c)) {
     const categories = codingCategories(c);
     p.route = "Accounting treatment review";
-    p.summary = `The source account is ${c.facts.currentGL} ${c.facts.currentAccount}${categories.current ? ` (${categories.current})` : ""}; the description suggests reviewing ${c.facts.expectedGL} ${c.facts.expectedAccount}${categories.expected ? ` (${categories.expected})` : ""}. The appropriate accounting treatment is not established.`;
+    p.summary = `The source account is ${c.facts.currentGL} ${c.facts.currentAccount}${categories.current ? ` (${categories.current})` : ""}; the description suggests reviewing ${c.facts.expectedGL} ${c.facts.expectedAccount}${categories.expected ? ` (${categories.expected})` : ""}. Check the accounting policy before deciding which account to use.`;
     p.rationale = categories.current && categories.expected ? "Capitalization or expensing can change assets, expenses and subsequent depreciation. A generic expense-reclass permission does not establish the correct treatment." : "Confirm the account classifications and supported accounting treatment before preparing a correction.";
     missing.push(categories.current && categories.expected ? "Obtain capitalization policy and a supported accounting-treatment decision" : "Confirm asset/expense account classifications and treatment policy");
     const identityIssue = invoiceIdentityIssue(c);if (identityIssue) missing.push(identityIssue);
@@ -162,8 +162,8 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     return p;
   }
   if (!s) {
-    p.summary = c.kind === "duplicate" ? "Matching invoice identifiers, vendor, property, date and amount identify a candidate. Posting, payment and distinct source-transaction identity remain unknown." : `The description suggests ${c.facts.expectedAccount}, while the source account is ${c.facts.currentAccount}. Confirm the invoice and ledger before choosing a remedy.`;
-    p.rationale = "Prepare a correction only after verifying the underlying transaction and authorized accounting period.";
+    p.summary = c.kind === "duplicate" ? "These records might represent the same invoice. The application needs posting and payment evidence before recommending a correction." : `The description suggests ${c.facts.expectedAccount}, but this invoice is coded to ${c.facts.currentAccount}. Check the invoice and ledger before deciding whether to change the account.`;
+    p.rationale = "Check the original invoice, whether it was posted or paid, and whether the correction is allowed in this accounting period.";
     missing.push("Obtain invoice and source transaction support", "Confirm posting, payment, entity, period and correction authority");
     const identityIssue = invoiceIdentityIssue(c);if (identityIssue) missing.push(identityIssue);
     return p;
@@ -184,12 +184,12 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     else if (s.paymentState === "paid") { p.route = "Recovery review"; missing.push("Obtain settlement and vendor credit/refund recovery support"); }
     else if (s.postingState === "unposted") p.route = "Invoice rejection";
     else if (s.postingState === "posted") p.route = "AP reversal";
-    p.summary = missing.length ? "The added support is incomplete. Keep the candidate open until transaction state and the correction route are established." : p.route === "Invoice rejection" ? `Reject extra unposted invoice ${s.transactionId}; retain ${s.retainedTransactionId}. No standalone JE is required.` : `Reverse extra bill ${s.transactionId} through AP; retain ${s.retainedTransactionId}. Both are unpaid and unscheduled according to the payment support.`;
+    p.summary = missing.length ? "More information is needed before recommending a correction. Confirm whether the invoice was posted or paid and which correction is allowed." : p.route === "Invoice rejection" ? `Reject extra unposted invoice ${s.transactionId}; retain ${s.retainedTransactionId}. No standalone JE is required.` : `Reverse extra bill ${s.transactionId} through AP; retain ${s.retainedTransactionId}. Both are unpaid and unscheduled according to the payment support.`;
     p.rationale = "A correction through AP keeps the vendor bill and GL aligned. A manual GL-only reversal does not stop a payment or remove an outstanding source bill.";
   } else {
     if (s.paymentState === "scheduled" || s.paymentState === "paid") missing.push("Accounting treatment for the payment state requires further review");
     p.route = s.postingState === "unposted" ? "Invoice recoding" : "Expense reclassification";
-    p.summary = missing.length ? "The coding suggestion requires further source or authorization evidence before an actionable correction can be approved." : s.postingState === "unposted" ? `Recode invoice ${s.transactionId} from ${c.facts.currentGL} to ${c.facts.expectedGL} and repeat required approval.` : `Reclassify ${money(c.amountCents)} within ${s.entity}: debit ${c.facts.expectedGL} ${c.facts.expectedAccount}; credit ${c.facts.currentGL} ${c.facts.currentAccount}.`;
+    p.summary = missing.length ? "Check the invoice, ledger records and approval authority before approving an account correction." : s.postingState === "unposted" ? `Recode invoice ${s.transactionId} from ${c.facts.currentGL} to ${c.facts.expectedGL} and repeat required approval.` : `Reclassify ${money(c.amountCents)} within ${s.entity}: debit ${c.facts.expectedGL} ${c.facts.expectedAccount}; credit ${c.facts.currentGL} ${c.facts.currentAccount}.`;
     p.rationale = "This is an expense classification change within the confirmed property/entity. Total expense, AP and cash do not change. Execute one authorized correction route, not both an AP reclass and a manual JE.";
     if (!missing.length && s.postingState === "posted") p.journal = [
       {account: String(c.facts.expectedGL), name: String(c.facts.expectedAccount), debitCents: c.amountCents, creditCents: 0},
