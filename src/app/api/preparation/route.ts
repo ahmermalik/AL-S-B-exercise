@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { actor, errorResponse, HttpError, workspaceHeaders, mutationGeneration } from "@/server/http";
-import { getWorkspace, getRun, importWorkbook, createRun, cancelRun, resumeRun } from "@/server/store";
+import { getWorkspace, getRun, importWorkbook, createRun, cancelRun, resumeRun, operationsSource } from "@/server/store";
+import { preparationReceipt } from "@/server/preparation-receipt";
 export const runtime = "nodejs";
 export async function GET(request: Request) {
-  try { await actor(request); const workspace = getWorkspace(); return NextResponse.json({ source: workspace.source, run: workspace.run }, { headers: workspaceHeaders() }); }
+  try {
+    await actor(request);
+    const workspace = getWorkspace();
+    const receipt = workspace.source ? preparationReceipt(workspace.source, operationsSource().cases, workspace.run) : null;
+    return NextResponse.json({ source: workspace.source, run: workspace.run, receipt }, { headers: workspaceHeaders() });
+  }
   catch (error) { return errorResponse(error); }
 }
 export async function POST(request: Request) {

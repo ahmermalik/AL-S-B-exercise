@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, CheckCircle2, FileSpreadsheet, Play, RotateCcw, TriangleAlert, UploadCloud } from "lucide-react";
-import type { ImportSummary, Run } from "@/shared/types";
+import type { ImportSummary, PreparationReceipt, Run } from "@/shared/types";
 import { CountUp, ease, fadeUp, spring } from "./motion";
 import { api, useResource } from "@/lib/api";
 import { dateTime } from "@/lib/ui";
@@ -11,7 +11,7 @@ import { Button } from "./ui/button";
 import { Dialog } from "./ui/dialog";
 import { BackLink, ErrorState, Notice, Status } from "./common";
 import { PageSkeleton } from "./skeleton";
-type Preparation = { source: ImportSummary | null; run: Run | null };
+type Preparation = { source: ImportSummary | null; run: Run | null; receipt: PreparationReceipt | null };
 type UploadState = "idle" | "dragover" | "uploading" | "imported" | "error";
 // Server stage names, with the label shown to reviewers.
 const stages = [{ key: "Importing", label: "Import workbook" }, { key: "Checking", label: "Check source records" }, { key: "Investigating", label: "Investigate exceptions" }, { key: "Drafting", label: "Draft case analysis" }, { key: "Validating", label: "Validate drafts" }, { key: "Submitted", label: "Ready for review" }];
@@ -23,9 +23,9 @@ function PrepareContent() {
   const [busy, setBusy] = useState<"import" | "start" | "cancel" | "resume" | null>(null); const [error, setError] = useState(""); const [notices, setNotices] = useState(false);
   const [upload, setUpload] = useState<UploadState>("idle"); const [confirmCancel, setConfirmCancel] = useState(false); const [now, setNow] = useState(() => Date.now());
   const input = useRef<HTMLInputElement>(null); const openButton = useRef<HTMLAnchorElement>(null);
-  const run = resource.data?.run; const source = resource.data?.source;
+  const run = resource.data?.run; const source = resource.data?.source; const receipt = resource.data?.receipt;
   const active = run?.status === "running" || run?.status === "queued";
-  // Remember whether this run finished while the page was open, to mark the moment instead of showing a stale "complete".
+  // Announce completion and focus the review link only when this page watched the run finish.
   const [watchedRun, setWatchedRun] = useState<string | null>(null);
   if (active && run && watchedRun !== run.id) setWatchedRun(run.id);
   const justFinished = !!run && watchedRun === run.id && !active;
@@ -89,13 +89,21 @@ function PrepareContent() {
             <span className="stage-meta mono">{state !== "todo" && meta}{state !== "todo" && meta && timing && " · "}{state !== "todo" && timing}</span>
           </li>;
         })}</ol>
-        <AnimatePresence>{justFinished && finishedRun && <motion.div className="run-summary" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease }} aria-live="polite"><CheckCircle2 size={18} /><div><strong>{run.totalCases} findings prepared in {elapsed}</strong><p className="small">Every finding links back to its source records. Review starts in the workspace.</p></div></motion.div>}</AnimatePresence>
+        {justFinished && finishedRun && <p className="sr-only" role="status">{run.totalCases} findings prepared. Open the workspace to review.</p>}
         {run.error && <Notice tone={run.status === "partial" ? "warning" : "error"}>{run.error}</Notice>}
         <div className="actions">{active ? (confirmCancel ? <><span className="small">Cancel this run?</span><Button variant="danger" size="sm" loading={busy === "cancel"} onClick={() => control("cancel")}>Cancel run</Button><Button variant="ghost" size="sm" onClick={() => setConfirmCancel(false)}>Keep running</Button></> : <Button variant="outline" disabled={!!busy} onClick={() => setConfirmCancel(true)}>Cancel preparation</Button>)
           : ["partial", "cancelled", "failed"].includes(run.status) ? <Button disabled={!!busy} loading={busy === "resume"} onClick={() => control("resume")}>{busy !== "resume" && <RotateCcw size={15} />}{run.status === "partial" ? "Retry drafting" : "Resume preparation"}</Button>
           : <Button variant="outline" disabled={!!busy || !source} loading={busy === "start"} onClick={() => control("start")}>Run again</Button>}
           {!active && <Button asChild><Link ref={openButton} href="/">{run.status === "complete" ? "Open workspace" : "Open available findings"}<ArrowRight size={15} /></Link></Button>}</div>
       </> : <>{!source && <p className="muted small">Import a workbook to begin.</p>}<ol className="stage-timeline stage-timeline--preview">{stages.map((stage, index) => <li key={stage.key} data-state="todo"><span className="stage-rail" aria-hidden="true" /><span className="stage-dot">{index + 1}</span><span className="stage-name">{stage.label}</span></li>)}</ol><div className="actions"><Button disabled={!source || !!busy} loading={busy === "start"} onClick={() => control("start")}>{busy !== "start" && <Play size={16} />}Start preparation</Button></div></>}</div></section></div>
+    {receipt && <section className="panel section-gap" aria-labelledby="preparation-receipt-title"><div className="panel-head"><h2 id="preparation-receipt-title">Preparation receipt</h2><span className="small muted">Current workbook</span></div><div className="panel-body"><ul className="preparation-receipt">
+      <li><strong>{receipt.screened.invoices}</strong><span>invoice rows screened for duplicates, coding and approval evidence</span></li>
+      <li><strong>{receipt.screened.variances}</strong><span>budget/actual rows checked for required commentary</span></li>
+      <li><strong>{receipt.screened.steps}</strong><span>close steps checked for overdue work and date conflicts</span></li>
+      <li><strong>{receipt.findings}</strong><span>findings assembled · {receipt.sourceRecordsAttached} distinct original source rows attached</span></li>
+      <li><strong>{receipt.currentAiAnalyses}</strong><span>current AI analyses with source links</span></li>
+      <li><strong>{receipt.approvalInvoices}</strong><span>invoices grouped into {receipt.approvalProperties} property approval-evidence cases</span></li>
+    </ul></div></section>}
     <Dialog open={notices} onOpenChange={setNotices} title="Source notices"><div className="stack">{source?.warnings.map((warning, index) => <Notice key={index} tone="warning">{warning}</Notice>)}</div></Dialog>
   </>;
 }

@@ -282,8 +282,8 @@ export function applyCaseAction(id: string, unsafeAction: CaseAction, actor: Act
         if (s.approvalRecords?.length) c.evidence.push({id: `EVD-${randomUUID()}`, label: "Regional approval records", kind: "approval", author: s.author, text: JSON.stringify(s.approvalRecords, null, 2), data: {records: s.approvalRecords, recordedBy}, version: c.evidenceVersion, createdAt: now()});
         if (s.closeRecords?.length) c.evidence.push({id: `EVD-${randomUUID()}`, label: "Updated close work records", kind: "close", author: s.author, text: JSON.stringify(s.closeRecords, null, 2), data: {records: s.closeRecords, recordedBy}, version: c.evidenceVersion, createdAt: now()});
         if (c.execution) { c.facts.executionHistory = [...((c.facts.executionHistory as unknown[]) || []), c.execution]; c.execution = null; }
-        c.status = "awaiting_evidence"; c.nextAction = "Prepare a revised proposal from the new evidence";
-        c.history.push(history(actor.name, `Recorded support from ${s.author} as E${c.evidenceVersion}; earlier review is historical.`));
+        const proposal = addProposal(c, buildRuleProposal(c));
+        c.history.push(history(actor.name, `Recorded support from ${s.author} as E${c.evidenceVersion} and prepared proposal v${proposal.version} from current evidence; earlier review is historical.`));
         break;
       }
       case "prepare":

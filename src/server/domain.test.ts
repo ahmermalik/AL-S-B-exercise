@@ -31,7 +31,6 @@ function action(c: CaseDetail, a: Parameters<typeof store.applyCaseAction>[1], a
 function supported(c: CaseDetail) {
   const s=store.getSupportTemplate(c.id)!;
   c=action(c,{action:"support",expectedRevision:c.revision,support:s},accountant);
-  c=action(c,{action:"prepare",expectedRevision:c.revision});
   return c;
 }
 beforeAll(async()=>{
@@ -70,12 +69,12 @@ describe("accounting boundaries",()=>{
     let c=byTitle("Lone Star");const template=store.getSupportTemplate(c.id)!;
     expect(template.invoiceReference).toBe("INV-88242");expect(template.invoiceRecord).toContain("INV-88242");
     for (const invoiceReference of [undefined,"INV-UNRELATED-01"]) {
-      c=action(c,{action:"support",expectedRevision:c.revision,support:{...template,invoiceReference}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});
+      c=action(c,{action:"support",expectedRevision:c.revision,support:{...template,invoiceReference}},accountant);
       expect(c.proposals.at(-1)?.missing.some(message=>message.toLowerCase().includes("invoice reference"))).toBe(true);
       expect(c.proposals.at(-1)?.journal).toEqual([]);
       expect(()=>action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id})).toThrow(/incomplete/);
     }
-    c=action(c,{action:"support",expectedRevision:c.revision,support:{...template,invoiceReference:"88242"}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...template,invoiceReference:"88242"}},accountant);
     expect(c.proposals.at(-1)?.missing).toEqual([]);c=action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id});
     const record=c.facts.executionTemplate as Record<string,unknown>;
     const legacy=structuredClone(c);(legacy.facts.support as {invoiceReference?:string}).invoiceReference=undefined;
@@ -83,13 +82,13 @@ describe("accounting boundaries",()=>{
     expect(()=>action(legacy,{action:"execute",expectedRevision:legacy.revision,reference:"LEGACY-1",targetId:String(record.targetId),amountCents:legacy.amountCents,notes:"Old approved workpaper",refreshedRecord:JSON.stringify(record)},accountant)).toThrow(/invoice identity/);
     legacy.status="verified";database.sqlite.prepare("UPDATE close_cases SET data=? WHERE id=?").run(JSON.stringify(legacy),legacy.id);
     expect(()=>action(legacy,{action:"resolve",expectedRevision:legacy.revision})).toThrow(/invoice identity/);
-    c=action(legacy,{action:"support",expectedRevision:legacy.revision,support:template},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.journal).toHaveLength(2);
+    c=action(legacy,{action:"support",expectedRevision:legacy.revision,support:template},accountant);expect(c.proposals.at(-1)?.journal).toHaveLength(2);
   });
   it("cannot turn capital-versus-expense candidates into a generic expense reclass",()=>{
     for (const vendor of ["Turn materials vendor", "Cooling vendor"]) {
       let c=byTitle(vendor);expect(c.facts.currentCategory).toBe("CapEx");expect(c.proposals.at(-1)?.route).toBe("Accounting treatment review");
       const genericSupport={...store.getSupportTemplate(byTitle("Lone Star").id)!,transactionId:`CAP-${vendor}`,explanation:"Generic reclass request",policyRecord:"Manager permits same-entity expense reclasses."};
-      c=action(c,{action:"support",expectedRevision:c.revision,support:genericSupport},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});
+      c=action(c,{action:"support",expectedRevision:c.revision,support:genericSupport},accountant);
       expect(c.proposals.at(-1)?.journal).toEqual([]);expect(c.proposals.at(-1)?.missing).toContain("Obtain capitalization policy and a supported accounting-treatment decision");expect(c.proposals.at(-1)?.rationale).not.toContain("Total expense, AP and cash do not change");
       expect(()=>action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id})).toThrow(/accounting-treatment/);
       expect(c.facts.executionTemplate).toBeNull();
@@ -99,7 +98,8 @@ describe("accounting boundaries",()=>{
 describe("versioned correction workflow",()=>{
   it("binds approval to current evidence; a conflicting refreshed record blocks resolution",()=>{
     let c=supported(byTitle("StaffBridge"));const p=c.proposals.at(-1)!;
-    expect(p.route).toBe("AP reversal");expect(p.journal).toEqual([]);
+    expect(c.status).toBe("ready");expect(c.proposals).toHaveLength(2);expect(p.origin).toBe("rules");expect(p.evidenceVersion).toBe(c.evidenceVersion);expect(p.route).toBe("AP reversal");expect(p.journal).toEqual([]);
+    const unchanged=action(c,{action:"support",expectedRevision:c.revision,support:store.getSupportTemplate(c.id)!},accountant);expect(unchanged).toEqual(c);
     c=action(c,{action:"approve",expectedRevision:c.revision,proposalId:p.id});expect(c.status).toBe("approved");
     for(const a of ["prepare","edit","return","dismiss","request"] as const) expect(()=>action(c,{action:a,expectedRevision:c.revision,summary:"Changed",reason:"Changed",text:"Changed"} as never)).toThrow(/open review/);
     const record: Record<string,unknown>={...(c.facts.executionTemplate as Record<string,unknown>),amountCents:c.amountCents-1};
@@ -109,9 +109,13 @@ describe("versioned correction workflow",()=>{
     c=action(c,{action:"execute",expectedRevision:c.revision,reference:"APREV-101",targetId:String(correct.targetId),amountCents:c.amountCents,notes:"Corrected refreshed extract",refreshedRecord:JSON.stringify(correct)},accountant);
     c=action(c,{action:"verify",expectedRevision:c.revision});expect(c.status).toBe("verified");c=action(c,{action:"resolve",expectedRevision:c.revision});expect(c.status).toBe("resolved");
     expect(byTitle("Office Depot").status).toBe("candidate");
-    const old=c;const support={...store.getSupportTemplate(c.id)!,explanation:"Updated supporting record"};c=action(c,{action:"support",expectedRevision:c.revision,support},accountant);expect(c.status).toBe("awaiting_evidence");expect(c.evidenceVersion).toBe(2);expect(c.proposals.at(-1)?.disposition).toBe("approved");
+    const old=c;const support={...store.getSupportTemplate(c.id)!,explanation:"Updated supporting record"};c=action(c,{action:"support",expectedRevision:c.revision,support},accountant);
+    expect(c.status).toBe("ready");expect(c.evidenceVersion).toBe(2);expect(c.revision).toBe(old.revision+1);expect(c.proposals.at(-1)?.disposition).toBe("pending");expect(c.proposals.at(-1)?.evidenceVersion).toBe(2);expect(c.proposals.at(-2)?.disposition).toBe("approved");expect(c.execution).toBeNull();expect(c.facts.executionHistory).toEqual([...((old.facts.executionHistory as unknown[]) || []),old.execution]);
     expect(()=>action(old,{action:"prepare",expectedRevision:old.revision})).toThrow(/changed/);
+    expect(()=>action(c,{action:"approve",expectedRevision:c.revision,proposalId:p.id})).toThrow(/latest proposal/);
     expect(()=>action(c,{action:"execute",expectedRevision:c.revision,reference:"WRONG",targetId:support.transactionId,amountCents:c.amountCents,notes:"Old approval",refreshedRecord:JSON.stringify(correct)},accountant)).toThrow(/current approved/);
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...support,paymentState:"unknown",paymentRecord:""}},accountant);
+    expect(c.status).toBe("awaiting_evidence");expect(c.proposals.at(-1)?.missing).toContain("Payment and scheduled-payment evidence is required");expect(c.proposals.at(-1)?.evidenceVersion).toBe(c.evidenceVersion);
   });
   it("drafts balanced conditional coding entries and rejects unposted invoices without a JE",()=>{
     const coding=supported(byTitle("Lone Star"));expect(coding.proposals.at(-1)?.route).toBe("Expense reclassification");expect(coding.proposals.at(-1)?.journal.map(l=>l.account)).toEqual(["6210","6410"]);expect(coding.proposals.at(-1)?.journal.reduce((n,l)=>n+l.debitCents-l.creditCents,0)).toBe(0);
@@ -126,15 +130,15 @@ describe("versioned correction workflow",()=>{
     let c=byTitle("Regional approval");const row=(c.facts.invoices as {source:{row:number}}[])[0].source.row;
     expect(c.proposals.at(-1)?.missing[0]).toContain("LIMIT-10001 · Approval vendor");expect(c.proposals.at(-1)?.missing[0]).not.toMatch(/\brow\s+\d+/i);
     const base={author:accountant.name,period:"September 2026",explanation:"Approval register extract",transactionId:"",entity:"",postingState:"unknown" as const,paymentState:"unknown" as const,duplicateConfirmed:false,periodOpen:false,correctionAuthorized:false,invoiceRecord:"",ledgerRecord:"",paymentRecord:"",policyRecord:""};
-    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"CFO",reference:"APP-1",approvedBeforePayment:true}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing.length).toBe(1);
-    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"Regional Manager",reference:"APP-2",approvedBeforePayment:true}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing).toEqual([]);
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"CFO",reference:"APP-1",approvedBeforePayment:true}]}},accountant);expect(c.proposals.at(-1)?.missing.length).toBe(1);
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,approvalRecords:[{invoiceRow:row,approverRole:"Regional Manager",reference:"APP-2",approvedBeforePayment:true}]}},accountant);expect(c.proposals.at(-1)?.missing).toEqual([]);
     c=action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id});expect(c.status).toBe("verified");expect(c.execution).toBeNull();c=action(c,{action:"resolve",expectedRevision:c.revision});expect(c.status).toBe("resolved");
   });
   it("requires completed work records by BD6 for all affected close steps without rewriting B4",()=>{
     let c=byTitle("Close tracker");const before=store.getWorkspace().properties.find(p=>p.id==="P105")!.steps;
     const base={author:accountant.name,period:"September 2026",explanation:"Updated workpapers",transactionId:"",entity:"",postingState:"unknown" as const,paymentState:"unknown" as const,duplicateConfirmed:false,periodOpen:false,correctionAuthorized:false,invoiceRecord:"",ledgerRecord:"",paymentRecord:"",policyRecord:""};
-    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,closeRecords:[{step:"AP cutoff & accruals",completedBD:7,reference:"WP-1"},{step:"Bank reconciliation",completedBD:6,reference:"WP-2"}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing.length).toBe(1);
-    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,closeRecords:[{step:"AP cutoff & accruals",completedBD:6,reference:"WP-3"},{step:"Bank reconciliation",completedBD:6,reference:"WP-2"}]}},accountant);c=action(c,{action:"prepare",expectedRevision:c.revision});expect(c.proposals.at(-1)?.missing).toEqual([]);c=action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id});expect(c.status).toBe("verified");expect(store.getWorkspace().properties.find(p=>p.id==="P105")!.steps).toEqual(before);
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,closeRecords:[{step:"AP cutoff & accruals",completedBD:7,reference:"WP-1"},{step:"Bank reconciliation",completedBD:6,reference:"WP-2"}]}},accountant);expect(c.proposals.at(-1)?.missing.length).toBe(1);
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...base,closeRecords:[{step:"AP cutoff & accruals",completedBD:6,reference:"WP-3"},{step:"Bank reconciliation",completedBD:6,reference:"WP-2"}]}},accountant);expect(c.proposals.at(-1)?.missing).toEqual([]);c=action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id});expect(c.status).toBe("verified");expect(store.getWorkspace().properties.find(p=>p.id==="P105")!.steps).toEqual(before);
   });
 });
 describe("persistent job ownership",()=>{

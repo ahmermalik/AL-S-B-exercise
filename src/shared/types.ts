@@ -41,6 +41,16 @@ export interface Run {
   /** When each stage began, recorded by the worker as the run progresses. */
   stageLog?: { name: string; at: string }[];
 }
+/** Work recorded for the active workbook, using its current cases rather than cumulative run totals. */
+export interface PreparationReceipt {
+  importId: string;
+  screened: { invoices: number; variances: number; steps: number };
+  findings: number;
+  sourceRecordsAttached: number;
+  currentAiAnalyses: number;
+  approvalInvoices: number;
+  approvalProperties: number;
+}
 export type CommentaryReviewState = "missing" | "wording_accepted" | "resolved" | "dismissed";
 export interface CommentaryDiscrepancy {
   propertyId: string; propertyName: string; accountant: string;

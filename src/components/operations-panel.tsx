@@ -58,16 +58,17 @@ function PrioritiesBriefing({ ops, refresh, onLink }: { ops: Operations; refresh
 
 function UsageLine({ usage }: { usage: AiUsage }) {
   const parts: [number, string][] = [[usage.generated, "generated"], [usage.approved, "approved directly"], [usage.returned, "returned"], [usage.pending, "pending review"], [usage.superseded, "superseded"]];
-  return <div className="usage-line divider">
+  return <details className="usage-line usage-definitions divider small">
+    <summary>AI draft activity</summary>
     <p className="small"><span className="group-label">AI case drafts</span>{parts.map(([count, label]) => <span key={label} className="usage-part"><strong>{count}</strong> {label}</span>)}</p>
-    <details className="usage-definitions small"><summary>Definitions</summary><dl className="key-value">
+    <dl className="key-value">
       <dt>Generated</dt><dd>AI-drafted proposal versions for the current workbook.</dd>
       <dt>Approved directly</dt><dd>The AI version itself was approved or accepted, without a manager rewrite.</dd>
       <dt>Returned</dt><dd>The AI version was returned with a reason.</dd>
       <dt>Pending review</dt><dd>The latest version in an open case, awaiting a decision.</dd>
       <dt>Superseded</dt><dd>Replaced by newer evidence or a manager edit, or its finding was dismissed, before a decision.</dd>
-    </dl><p className="muted">Counts cover the current workbook. Adoption is judged across repeated closes.</p></details>
-  </div>;
+    </dl><p className="muted">Counts cover the current workbook. Adoption is judged across repeated closes.</p>
+  </details>;
 }
 
 const heat = (overdue: number, due: number) => !overdue || !due ? 0 : overdue / due < 1 / 3 ? 1 : overdue / due < 2 / 3 ? 2 : 3;

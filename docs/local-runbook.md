@@ -55,12 +55,16 @@ Start with a fresh preparation after **Reset walkthrough** when demonstrating th
 1. Sign in as the manager and open Prepare review. The demo workbook is already imported. Inspect the source notices, then use Start preparation or Run again after a completed run. A new run reuses the import's findings, preserves reviewed work and can regenerate eligible pending AI drafts. Preparation covers the whole workbook; select Sunset Ridge in the workspace afterward. A different workbook can be uploaded manually before preparation.
 2. Open Sunset Ridge. The actual data has four findings: StaffBridge duplicate, Office Depot duplicate, grounds coding, and a Regional Manager approval-evidence gap. All remain in scope.
 3. Request evidence for StaffBridge. In a second browser profile/private window, sign in as the accountant, open the same case, and Add support. Load support explicitly to populate the prepared exercise records, or enter the source details manually. Their internal provenance is retained without interface banners.
-4. Prepare proposal from structured evidence, or use Revise with AI against the current case evidence. Review the source/version and remedy as manager, then approve the current proposal.
+4. Saving support automatically prepares a new rules-based proposal from the current evidence. Complete support becomes ready for review; missing evidence stays open. Use Revise with AI optionally to revise the explanation. Review the source/version and remedy as manager, then approve the current proposal. Compare versions remains available to show what changed.
 5. As accountant, Record execution. The correction reference and observed refreshed-record fields must be entered; expected ledger effects are not silently copied into observed source data. Check refreshed records; conflicting values keep the case open.
 6. As manager, confirm this issue resolved. Other cases and original close-source statuses remain separate.
 7. Open Review package for Sunset Ridge. Review the case register, optionally write or generate a short summary, acknowledge scope/open work, and save a reviewed snapshot. Preview/print that exact package or download CSV. Historical packages remain unchanged when cases later change.
 
 The grounds case supports a conditional same-entity expense reclass; the office case supports rejection when its added source records establish unposted status. Capital-versus-expense candidates remain in Accounting treatment review pending policy/treatment evidence. Approval and close cases accept typed support records and manager evidence review without inventing a financial posting.
+
+The Prepare review receipt persists across navigation and reloads and describes the current workbook's recorded preparation. It distinguishes source records screened, findings assembled, distinct original source rows attached, current source-linked AI analyses, and invoice approval-evidence groups. Partial drafting remains partial; these counts do not establish accuracy, adoption or time savings. Workspace AI counts and their definitions are available under the collapsed **AI draft activity** disclosure.
+
+Known form limitation: the financial support form requires a Ledger / source record even for an unposted invoice. The accounting rules require posted-ledger support only for posted transactions. For an unposted invoice, record the actual source-register reference and unposted status; do not invent a posted ledger entry. Conditional form requirements remain follow-up work.
 
 ## Reset walkthrough
 
@@ -81,6 +85,8 @@ pnpm build
 ```
 
 November 1 demo fixes passed typecheck, lint, 83 unit tests, both browser workflows and an isolated production build. Browser regressions cover returning from a matrix filter to all properties, retaining pagination through the amount dialog, and accepting P114 wording so both the commentary card and drill-down show five properties. A bounded live priorities request passed in one call with the grounded selection schema. Hosted preparation after reset completed 67/67; P114 has four related AP records and P107 has none. The browser tests use isolated databases. Earlier desktop/phone, dark-theme, 125% zoom, reduced-motion and keyboard/focus checks are recorded in the implementation history.
+
+The subsequent D032 local simplification passed all 88 unit tests, typecheck, lint, both isolated browser workflows and a separate production build. Receipt persistence, phone layout, keyboard expansion, automatic proposal preparation and version comparison passed alongside the financial review/reset/export regressions. Deployment of D032 remains pending.
 
 The browser tests use an isolated `data/e2e/workspace.sqlite` database and archive directory on port 3101 with provider credentials disabled; they never modify the working database or spend API credits. Stop the native development server before using the default test runner, because Next.js permits one development server per project output directory. Test setup resets only its own database. The financial workflow covers role denial, missing support, staff/manager transitions, refreshed evidence, package creation, AI-unavailable recovery, immutable exports and a phone viewport. The reset test covers confirmation/cancel, both role sessions, stale requests, browser drafts, shared-window reload and starting preparation again.
 
