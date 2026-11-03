@@ -48,3 +48,6 @@ test-results/
 
 # Local presentation scripts and rehearsal support
 /demo-support/
+
+# Generated Claude memory files
+CLAUDE.md
