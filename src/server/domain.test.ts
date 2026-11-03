@@ -96,6 +96,21 @@ describe("accounting boundaries",()=>{
   });
 });
 describe("versioned correction workflow",()=>{
+  it("keeps incomplete responses open and never approves a separate-invoice response as a correction",()=>{
+    let c=byTitle("Office Depot"); const original=structuredClone(c);
+    const template=store.getSupportTemplate(c.id)!;
+    const support={...template,duplicateAssessment:"uncertain" as const,invoiceRecord:"",ledgerRecord:"",paymentRecord:"",duplicateConfirmed:false,explanation:"I am still obtaining the original invoices."};
+    c=action(c,{action:"support",expectedRevision:c.revision,support},accountant);
+    expect(c.proposals.at(-1)!.missing.length).toBeGreaterThan(0);
+    expect(()=>action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id})).toThrow();
+    c=action(c,{action:"support",expectedRevision:c.revision,support:{...support,duplicateAssessment:"not_duplicate",explanation:"The invoices cover separate deliveries, according to the attached source records.",invoiceRecord:"Separate invoice references and delivery records.",ledgerRecord:"Source register lists two separate obligations."}},accountant);
+    expect(c.proposals.at(-1)!.route).toBe("No correction proposed");
+    expect(c.proposals.at(-1)!.missing).toEqual([]);
+    expect(()=>action(c,{action:"approve",expectedRevision:c.revision,proposalId:c.proposals.at(-1)!.id})).toThrow(/correction/i);
+    // Restore the untouched fixture so subsequent independent workflow checks remain meaningful.
+    database.sqlite.prepare("UPDATE close_cases SET revision=?, data=? WHERE id=?").run(original.revision,JSON.stringify(original),original.id);
+  });
+
   it("binds approval to current evidence; a conflicting refreshed record blocks resolution",()=>{
     let c=supported(byTitle("StaffBridge"));const p=c.proposals.at(-1)!;
     expect(c.status).toBe("ready");expect(c.proposals).toHaveLength(2);expect(p.origin).toBe("rules");expect(p.evidenceVersion).toBe(c.evidenceVersion);expect(p.route).toBe("AP reversal");expect(p.journal).toEqual([]);

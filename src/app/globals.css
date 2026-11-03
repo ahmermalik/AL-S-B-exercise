@@ -899,3 +899,32 @@ button.matrix-head:hover, button.matrix-head[aria-pressed="true"] { text-decorat
 .evidence-history { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; }
 .evidence-history summary { cursor: pointer; color: var(--muted); }
 .evidence-submission { margin-top: 16px; }
+
+.evidence-review-action { margin-bottom: 12px; }
+.evidence-review-action .button { width: 100%; }
+.support-overview { margin-top: 14px; }
+.support-overview > p { margin: 12px 0; }
+.individual-evidence { margin-top: 16px; font-size: 13px; }
+.individual-evidence > summary { cursor: pointer; color: var(--muted); }
+.combined-evidence-group + .combined-evidence-group { margin-top: 28px; }
+.combined-evidence-group > h3 { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.combined-evidence-record { padding: 18px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.combined-evidence-record:last-child { border-bottom: 0; }
+.combined-evidence-record h4 { margin: 6px 0; font-size: 15px; }
+.combined-evidence-record > p.small { margin: 6px 0 14px; }
+
+.duplicate-review-summary { font-size: 14px; margin-bottom: 20px; }
+.duplicate-review-summary h3 { font-size: 15px; margin: 0 0 10px; }
+.duplicate-review-summary h3:not(:first-child) { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.duplicate-review-summary strong { display: block; margin-bottom: 7px; }
+.duplicate-review-summary p { margin: 7px 0; overflow-wrap: anywhere; }
+.supporting-document-list { margin-top: 16px; font-size: 14px; }
+.supporting-document-list > summary { cursor: pointer; color: var(--muted); }
+.supporting-document-list > .evidence-search { margin-top: 16px; }
+
+.sample-receipt { border-left: 3px solid var(--primary); background: var(--soft); padding: 14px 16px; font-size: 14px; }
+.sample-receipt p { margin: 8px 0 0; overflow-wrap: anywhere; }
+.source-detail-fields { font-size: 14px; }
+.source-detail-fields > summary { cursor: pointer; color: var(--muted); }
+.source-detail-fields .check-row { margin-top: 14px; }
+.case-action-feedback { margin-bottom: 16px; }

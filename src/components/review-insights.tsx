@@ -54,7 +54,7 @@ export function ProposalCompare({ proposals, initialFrom, initialTo }: { proposa
 }
 
 /* ---------- Case lifecycle ---------- */
-const financialSteps = ["Evidence", "Manager review", "Approved", "Execution recorded", "Records checked", "Resolved"];
+const financialSteps = ["Evidence", "Manager review", "Approved", "Correction recorded", "Records checked", "Resolved"];
 const evidenceSteps = ["Evidence", "Manager review", "Evidence accepted", "Resolved"];
 function position(item: Pick<CaseDetail, "status" | "kind">) {
   const financial = item.kind === "duplicate" || item.kind === "coding";

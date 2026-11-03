@@ -35,5 +35,6 @@ secrets
 test-results
 playwright-report
 coverage
+demo-support
 *.log
 *.tsbuildinfo

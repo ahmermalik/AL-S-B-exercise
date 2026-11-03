@@ -224,6 +224,7 @@ export function listRunCases(importId: string) { return listCases(importId).map(
 const short = z.string().trim().min(1).max(200);
 const note = z.string().trim().min(1).max(6000);
 const supportSchema = z.object({author: short, period: short, explanation: z.string().trim().max(4000), transactionId: z.string().trim().max(200), retainedTransactionId: z.string().trim().max(200).optional(), entity: z.string().trim().max(200), postingState: z.enum(["posted", "unposted", "unknown"]), paymentState: z.enum(["unpaid", "scheduled", "paid", "unknown"]), duplicateConfirmed: z.boolean(), periodOpen: z.boolean(), correctionAuthorized: z.boolean(), invoiceRecord: z.string().trim().max(6000), ledgerRecord: z.string().trim().max(6000), paymentRecord: z.string().trim().max(6000), policyRecord: z.string().trim().max(6000),
+  duplicateAssessment: z.enum(["duplicate", "not_duplicate", "uncertain"]).optional(),
   invoiceReference: z.string().trim().max(200).optional(),
   approvalRecords: z.array(z.object({invoiceRow: z.number().int().positive(), approverRole: short, reference: short, approvedBeforePayment: z.boolean()})).max(100).optional(),
   closeRecords: z.array(z.object({step: short, completedBD: z.number().int().min(1).max(31), reference: short})).max(20).optional(),
@@ -260,6 +261,7 @@ export function applyCaseAction(id: string, unsafeAction: CaseAction, actor: Act
       case "support": {
         role(actor, ["accountant"]);
         const s = action.support;
+        if (s.duplicateAssessment) s.duplicateConfirmed = s.duplicateAssessment === "duplicate";
         if (s.period !== "September 2026") throw new DomainError(400, "Support must identify September 2026.");
         if (JSON.stringify(s) === JSON.stringify(c.facts.support)) return decorate(c);
         c.evidenceVersion++;
@@ -299,6 +301,7 @@ export function applyCaseAction(id: string, unsafeAction: CaseAction, actor: Act
         break;
       case "approve": {
         role(actor, ["manager"]);
+        if (latest.route === "No correction proposed") throw new DomainError(409, "No correction is proposed. Review the response and confirm no correction is needed instead.");
         if (needsAccountingTreatmentReview(c)) throw new DomainError(409, "A supported accounting-treatment decision is required; generic expense-reclass authority is insufficient.");
         const identityIssue = invoiceIdentityIssue(c);
         if (identityIssue) throw new DomainError(409, `Supporting evidence is incomplete: ${identityIssue}.`);
@@ -310,7 +313,7 @@ export function applyCaseAction(id: string, unsafeAction: CaseAction, actor: Act
         latest.disposition = "approved";
         const evidenceOnly = ["variance", "approval", "close"].includes(c.kind);
         c.status = evidenceOnly ? latest.missing.length ? "awaiting_evidence" : "verified" : "approved";
-        c.nextAction = evidenceOnly ? latest.missing[0] || "Confirm supported issue resolution" : "Record authorized execution and refreshed evidence";
+        c.nextAction = evidenceOnly ? latest.missing[0] || "Confirm supported issue resolution" : "Make the approved change in the accounting system, then confirm completion here";
         c.history.push(history(actor.name, `Approved proposal v${latest.version} / E${c.evidenceVersion}${c.kind === "variance" ? " wording; remaining support stays open." : "; execution is separate."}`));
         break;
       }

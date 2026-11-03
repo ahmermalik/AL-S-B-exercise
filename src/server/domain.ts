@@ -124,8 +124,8 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
     p.route = "Commentary review";
     p.summary = `${c.facts.category} actual is ${money(actual)} against ${money(budget)} budget, ${money(Math.abs(delta))} ${delta >= 0 ? "unfavorable" : "favorable"} (${percent}).${relatedInvoiceSentence(c)} ${s?.explanation ? `The staff explanation attributes the variance as follows: ${s.explanation}` : "The available records do not explain why the amount differs from budget."}`;
     p.rationale = "An explanation is required when a category differs from budget by more than 10%. The invoice list may not include everything recorded in the ledger.";
-    if (!s?.explanation) missing.push("Request an attributable explanation and supporting ledger detail");
-    if (!s?.ledgerRecord) missing.push("Underlying ledger support remains outstanding");
+    if (!s?.explanation) missing.push("Ask the accountant to explain the variance and provide ledger records");
+    if (!s?.ledgerRecord) missing.push("Supporting ledger records are still needed");
     return p;
   }
   if (c.kind === "approval") {
@@ -149,6 +149,15 @@ export function buildRuleProposal(c: CaseDetail): ProposalInput {
       if (!record || record.completedBD > 6 || record.completedBD < 1 || !record.reference.trim()) missing.push(`Confirm ${step.name} completed by BD6 with a workpaper reference`);
     }
     if (!missing.length) p.summary = "Updated work records identify completion by BD6 and supporting references for the affected steps. Review the supporting work and resolve this issue separately from the original imported tracker.";
+    return p;
+  }
+  if (c.kind === "duplicate" && s?.duplicateAssessment === "not_duplicate") {
+    p.route = "No correction proposed";
+    p.summary = `The accountant reports that these are separate invoices. ${s.explanation}`;
+    p.rationale = "Review the explanation and source records before closing the finding without a correction.";
+    if (!s.explanation.trim()) missing.push("Explain why these are separate invoices");
+    if (!s.invoiceRecord.trim()) missing.push("Provide the invoices that establish two separate obligations");
+    if (!s.ledgerRecord.trim()) missing.push("Provide the source records for the two separate bills");
     return p;
   }
   if (needsAccountingTreatmentReview(c)) {

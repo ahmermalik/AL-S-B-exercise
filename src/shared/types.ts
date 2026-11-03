@@ -103,6 +103,7 @@ export interface SupportInput {
   transactionId: string; retainedTransactionId?: string; entity: string;
   postingState: "posted" | "unposted" | "unknown";
   paymentState: "unpaid" | "scheduled" | "paid" | "unknown";
+  duplicateAssessment?: "duplicate" | "not_duplicate" | "uncertain";
   duplicateConfirmed: boolean; periodOpen: boolean; correctionAuthorized: boolean;
   invoiceRecord: string; ledgerRecord: string; paymentRecord: string; policyRecord: string;
   approvalRecords?: { invoiceRow: number; approverRole: string; reference: string; approvedBeforePayment: boolean }[];
