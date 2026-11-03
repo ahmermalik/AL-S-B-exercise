@@ -508,7 +508,7 @@ button.stat[aria-pressed="true"] strong { text-decoration: underline; text-decor
 .stat > span { color: var(--muted); }
 .stat-context { color: var(--muted); font-size: 12px; opacity: .8; }
 .search-field { position: relative; }
-.search-field > svg { position: absolute; left: 12px; pointer-events: none; color: var(--muted); }
+.search-field > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
 .search-field input { padding-left: 36px; padding-right: 34px; }
 .search-clear { position: absolute; right: 6px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-sm); }
 .search-clear:hover { background: var(--soft); color: var(--foreground); }
@@ -877,3 +877,25 @@ button.matrix-head:hover, button.matrix-head[aria-pressed="true"] { text-decorat
 .finding-details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 14px; }
 .finding-details > summary { cursor: pointer; color: var(--muted); width: fit-content; }
 .finding-actions { border-top: 1px solid var(--line); padding-top: 16px; gap: 8px; }
+.case-activity time { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+.completed-review-details { margin-top: 18px; font-size: 14px; }
+.completed-review-details > summary { cursor: pointer; color: var(--muted); width: fit-content; }
+.completed-review-details .case-activity { margin-top: 16px; }
+.case-next-steps { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.case-next-steps .actions { flex-direction: column; align-items: stretch; gap: 10px; }
+
+.evidence-search { display: block; width: 100%; }
+.evidence-search input { min-width: 0; width: 100%; }
+.evidence-group { margin-top: 22px; }
+.evidence-group > summary { cursor: pointer; font-size: 15px; font-weight: 600; }
+.evidence-group > summary span { float: right; font-weight: 400; }
+.evidence-record-row { padding: 12px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.evidence-record-row:last-child { border-bottom: 0; }
+.evidence-record-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.evidence-record-row h4 { font-size: 14px; margin: 5px 0; }
+.evidence-record-row p { margin: 5px 0; }
+.evidence-record-row[data-highlight="true"] { background: var(--analysis-bg); }
+.evidence-history { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; }
+.evidence-history summary { cursor: pointer; color: var(--muted); }
+.evidence-submission { margin-top: 16px; }
