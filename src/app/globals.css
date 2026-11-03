@@ -871,3 +871,9 @@ button.matrix-head:hover, button.matrix-head[aria-pressed="true"] { text-decorat
   .case-head > .grow { flex-basis: 100%; min-width: 0; }
   .case-head > .inline { width: 100%; }
 }
+
+/* Keep the finding readable; source and preparation detail is available on demand. */
+.case-review-layout .proposal-route { border-bottom: 0; padding-bottom: 0; margin: 16px 0 10px; }
+.finding-details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px; font-size: 14px; }
+.finding-details > summary { cursor: pointer; color: var(--muted); width: fit-content; }
+.finding-actions { border-top: 1px solid var(--line); padding-top: 16px; gap: 8px; }

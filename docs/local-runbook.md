@@ -25,6 +25,8 @@ Keep the terminal open; **Ctrl+C** stops both the web server and worker. If port
 
 These are two roles within the same application and shared four-screen workflow. Staff records support and execution evidence; the manager reviews proposals, approves or returns them, confirms resolution and creates the reviewed package. The agent prepares findings without its own login. Use a normal browser window for the manager and a private window for the accountant to follow the handoff.
 
+The manager is Sandy Tran-Li. The staff login is P. Okafor, matching the workbook owner of the Sunset Ridge walkthrough. Other workbook accountants remain unchanged. Access is role-based across the shared workspace; this prototype does not restrict cases to the named owner or send evidence-request notifications. Open the same Sunset Ridge case in each account to demonstrate the handoff. Setup keeps these account names in sync without changing passwords or workflow history.
+
 Both local review accounts and the public reviewer deployment use `CloseReview!2026`. It is an intentionally published demonstration credential, not a private production secret. Do not use the shared deployment for confidential data. New installations use `LOCAL_SEED_PASSWORD`; startup does not silently reset existing passwords.
 
 The database is `data/asset-living.sqlite`; `.env.local`, runtime uploads, and imported source archives are gitignored. The intentionally public baseline is `seed/close-pack.xlsx`. Imported workbooks are hashed and archived under the data directory; resetting always returns to the first imported baseline.

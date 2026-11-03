@@ -45,3 +45,6 @@ coverage/
 *.tsbuildinfo
 playwright-report/
 test-results/
+
+# Local presentation scripts and rehearsal support
+/demo-support/

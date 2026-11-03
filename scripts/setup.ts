@@ -20,7 +20,8 @@ export async function setup() {
   if (!password || password.length < 12) throw new Error("Set LOCAL_SEED_PASSWORD to at least 12 characters in .env.local.");
   for (const role of ["manager", "accountant"] as const) {
     const email = `${role}@assetliving.com`;
-    const name = role === "manager" ? "Sandy Tran-Li" : "Hunter Harty";
+    // Match the staff login to the workbook owner of the Sunset Ridge walkthrough.
+    const name = role === "manager" ? "Sandy Tran-Li" : "P. Okafor";
     // Move accounts created under the earlier .local walkthrough domain instead of creating duplicates.
     const legacy = `${role}@assetliving.local`;
     if (!db.select().from(user).where(eq(user.email, email)).get() && db.select().from(user).where(eq(user.email, legacy)).get()) db.update(user).set({ email, updatedAt: new Date() }).where(eq(user.email, legacy)).run();
